@@ -875,7 +875,13 @@ join_labeled_clean %>%
 
 ### Modeling
 
-In this present section, we'll try to find specific effects influencing inflation rate. The previous correlation exploration shown interesting relationships and distribution, most of them being highly non-linear.
+In this present section, we'll try to find specific effects influencing inflation rate. The previous correlation exploration shown interesting relationships and distribution, most of them being highly non-linear with long tails. A solution to this would be to perform a log-transformation on the dependant variable and its predictors. This logarithmic transformation can, among other things, shrink long details distribution to more normal distribution. As demonstrated in [GDP - Inflation](#gdp---inflation) and [Broad Money - Inflation](#broad-money-(---inflation)), this works exceptionaly well.
+
+This small trick enable us to use a linear models. Due to the fact that our data is panel data, we'll use fixed-effects models to account for time and country fixed effects. However, before this, I'd like to perform another correlation exploration, log-transformed this time, for the inflation rate. This way, we'll see have a less biased view of potential predictors.
+
+```{r}
+
+```
 
 # Appendix
 
@@ -985,6 +991,37 @@ join_labeled %>%
     geom_line(color = "#0c64b5ff") +
     labs(x = "Year", y = "Broad Money (%)", title = "Yearly Average Broad Money") +
     theme_minimal() 
+```
+
+Broad money distribution has a very long tail. Which is problematic for normal linear model, as the result biased due to the outlier. By applying a log-transformation, we can see that the distribution looks way more normal now.
+
+```{r}
+join_labeled %>%
+    ggplot(
+        data = .,
+        mapping = aes(x = broad_money_pct)
+    ) +
+    geom_density(
+        mapping = aes(x =log(broad_money_pct), fill = "Broad Money"), alpha = 0.3) +
+    scale_fill_manual(values = c("Broad Money" = "#1f78d1ff")) +
+    labs(x = "Broad Money (%)", title = "Normal - Log Broad Money Distribution", fill = "Distribution") +
+    theme_minimal()
+```
+
+We can see now that by applying the logarithmic transformation to both inflation and broad money that the relationships look way more linear.
+
+```{r}
+join_labeled %>%
+    ggplot(
+        data = .
+    ) +
+    geom_point(
+        mapping = aes(x = log(broad_money_pct), y = log(inflation_pct), color = "Log"), 
+        alpha = 0.4
+    ) +
+    scale_color_manual(values = c("Log" = "#4dbb56ff")) +
+    labs(x = "Broad Money (%)", y = "Inflation (%)", title = "Log Broad Money - Log Inflation relationship") +
+    theme_minimal()
 ```
 
 ## Life expectancy - Inflation
@@ -1099,6 +1136,18 @@ join_labeled %>%
 
 ```{r}
 join_labeled %>%
+    ggplot(
+        data = .
+    ) +
+    geom_density(
+        mapping = aes(x = log(gdp_usd), color = "GDP"), fill = "#1f78d1ff", alpha = 0.3) +
+    scale_color_manual(values = c("GDP" = "#1f78d1ff")) +
+    labs(x = "GDP ($)", y = "Density", title = "Log GDP Distribution", color = "Distribution") +
+    theme_minimal()
+```
+
+```{r}
+join_labeled %>%
     select(gdp_usd, wealth_class) %>% 
     drop_na() %>% 
     ggplot(
@@ -1107,6 +1156,18 @@ join_labeled %>%
     geom_density(
         mapping = aes(x = gdp_usd, fill = wealth_class), alpha = 0.3, size = 0.2) +
     labs(x = "GDP", y = "Density", title = "GDP Distribution") +
+    theme_minimal()
+```
+
+```{r}
+join_labeled %>% 
+    ggplot(
+        data = .,
+        mapping = aes(x = log(gdp_usd), y = log(inflation_pct))
+    ) +
+    geom_point(color = "#2683e0ff", alpha = 0.5) +
+    geom_smooth(color = "black", method="lm") +
+    labs(x = "GDP ($)", y = "Inflation (%)", title = " Log GDP - Log Inflation relationship") +
     theme_minimal()
 ```
 
