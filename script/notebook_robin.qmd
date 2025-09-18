@@ -877,7 +877,9 @@ join_labeled_clean %>%
 
 In this present section, we'll try to find specific effects influencing inflation rate. The previous correlation exploration shown interesting relationships and distribution, most of them being highly non-linear.
 
-### Broad Money (%) - Inflation
+# Appendix
+
+## Broad Money (%) - Inflation
 
 The relationships between broad money and inflation isn't linear. This is likely the case because highly asymetric distribution of inflation and broad money. Indeed, as demonstrated below, they both come from a gamma distribution
 
@@ -985,7 +987,7 @@ join_labeled %>%
     theme_minimal() 
 ```
 
-### Life expectancy - Inflation
+## Life expectancy - Inflation
 
 The distribution of life expectancy is shifted to the right. The shape and it depends on the country wealth class, as the richer the country, the more negatively skewed the data seems to be. This makes naturally sense as the richer a country becomes, the higher the the life expectancy.
 
@@ -1052,7 +1054,7 @@ join_labeled %>%
     theme_bw()
 ```
 
-### GDP - Inflation
+## GDP - Inflation
 
 Looking at the distribution of GDP, we observe something akin to an extreme power-law distribution. The extreme amount of extreme values bias a linear relation ship estimation. Additionnaly, most country observation are stacked to the left, with high inflation. Reducing the amount of observation and only observing the average inflation per country reduces the stacking and increase the linear coefficient.
 
