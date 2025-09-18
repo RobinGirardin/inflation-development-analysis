@@ -41,6 +41,7 @@ library(RColorBrewer)
 library(geepack)
 library(RESI)
 library(fixest)
+library(etable)
 ```
 
 # Preprocessing
@@ -759,13 +760,17 @@ The cleaning process mainly comprise of dealing with missing values. Before doin
 
 #### Exploration of correlations
 
-Correlation is an effective way to observe relationships between data and look for potential good predictors. This assume linear relationships, which could be explored further using scatter plot. Panel data makes using correlation analysis as an inference trickier due to the assumption it involves. Fortunately, we'll only use it for exploration. Statistical inference will be done using an appropriate model. The goal of this step is merely understanding relationships slightly to guide the missing value cleaning process.
+Correlation is an effective way to observe relationships between data, as well as understand the data we're working with. This assume linear relationships, which could be explored further using scatter plot. Panel data makes using correlation analysis as an inference trickier due to the assumption it involves. Fortunately, we'll only use it for exploration, and understanding. Statistical inference will be done using an appropriate model. The goal of this step is merely understanding relationships slightly to guide the missing value cleaning process.
 
 Find below a dataframe containing pearson correlation values between all predictors and inflation.
 
-The highest association with inflation is the `broad_money_pct` variable, which is the the of all liquid financial instruments held by the country). This association is negative and of low-medium strength, with an coefficient of `-0.34`.
+The highest association with inflation is the `broad_money_pct` variable, which is the the of all liquid financial instruments held by the country. This association is negative and of low-medium strength, with an coefficient of `-0.34`. This would mean that the less financial instrument or liquidity a state has to its disposal, the higher the inflation. This is also supported by the right-shifting broad-money distribution when onditioned on the country's `wealth_class` (See [Broad Money - Inflation](#broad-money-(---inflation)) for graphs).
 
-However, there are too many effects going on influencing the association. For example, time-varying and time-invarying effect aren't taken into account here. This might be a reason why the correlation coefficient are so low overall.
+`total_reserve_usd` is also minorly associated with the inflation rate, with a pearson coefficient of -0.15, indicating that countries with less financial reserve are more subject to inflation, albeit to a lesser degree. This is nothing new as high inflation is generally associated with poorer countries. However, the reality seems slightly more complexe as `gdp_usd`, a important estimator of a country economical well-being, isn't much associated with inflation. 
+
+The reason for this (see [GDP - Inflation](#gdp---inflation)) is the massive extreme values of the relationship. Coupled with a GDP distribution akin to a extreme power-law distribution, a linear relationship estimator isn't suitable and bias. Moreover, this isn't an isolated case. Exploration of the relationship betwee inflation and other predictor, such as `broad_money_pct` and `life_expectancy` indicates similar issues. Additionally,  `broad_money_pct` is gamma distributed, as is `inflation_pct` and `life_expectancy` (See [Life Expectancy - Inflation](#life-expectancy---inflation)). This might be the reason why some correlation coefficients are unnaturally low.
+
+On top of that, there are too many effects going on influencing the association. For example, time-varying and time-invarying effect aren't taken into account here. 
 
 ```{r}
 join_labeled %>% 
@@ -775,17 +780,47 @@ cor_matrix <- join_labeled %>%
     select(where(is.numeric)) %>% 
     cor(., use = "complete.obs")
 
-cor_matrix <- cor_matrix %>%
+cor_matrix_infl<- cor_matrix %>%
     as.data.frame(cor_matrix, row.names = row.names(cor_matrix)) %>% 
     arrange(inflation_pct) %>% 
     select(inflation_pct)
+
+print(cor_matrix_infl)
 ```
+
+Other notable relationships are: 
+- `imports_gdp_pct` - `export_gdp_pct`: 0.80702
+- `imports_gdp_pct` - `gdp_usd`: -0.3182
+- `total_reserve_usd` - `broad_money_pct`: 0.5119
+- `total_reserve_usd` - `gdp_usd`: 0.5128
+- `total_reserve_usd` - `gni_usd`: 0.5517
+- `total_reserve_usd` - `enrol_tertiary_gross`: 0.3063
+- `gni_usd` - `gdp_usd`: 0.9884
+- `urban_pop_pct` - `net_enrol_primary`: 0.4961
+- `urban_pop_pct` - `net_enrol_secondary`: 0.5891
+- `urban_pop_pct` - `enrol_tertiary_gross`: 0.6410
+- `net_enrol_secondary` - `enrol_tertiary_gross`: 0.7927
+
+The correlation between those economic indicator such as the total reseve in usd and other indicators linked to the financial well-being of an economic such as GDP, GNI and broad money make sense. 
+Additionnaly, we can also observe high collinearity between GDP and GNI. While GNI measure each resident's final income (wages, investments, ..), GDP measure the value of the goods produced in a country. Such a high relationships make sense since GDP is used to compute the GNI.
+The high relationship between imports and exports would mean that the more a country imports, the more it exports. In this scenario, we could imagine the intervention of confounder variables driving this relationship. Indeed, imports and exports rate could act a proxy for financial well-being of an economy. Hence, the more a country imports, the better his economy, the better his economy, the more it produces, the more it produces, the more it exports. Especially, since imports and exports are computed in percentages of the GDP.
+
+```{r}
+cor_matrix_clean <- join_labeled_clean %>% 
+    select(where(is.numeric)) %>% 
+    cor(.)
+
+print(cor_matrix_clean)
+
+print(sort(cor_matrix_clean[, "inflation_pct"]))
+```
+
 
 #### Cleaning missing values
 
-We previously variable comprising a lot of different missing values. Some of those variable figures in the 'top' predictors identified above. Additionnaly, we also previously identified that most of those missing values figures in poorer countries.
+We previously identified variables comprising a lot of different missing values. Some of those variable figures in the 'top' predictors identified above. Additionnaly, we also previously identified that most of those missing values figures in poorer countries.
 
-The primary goal of this section is to indentify predictors for inflation rate across the rate without limiting the sample to riche country only. In this sense, we'll drop out variable having a majority of missing values, and simply remove the rest row-wise. Keeping those variable would introduce a clear sampling bias.
+The primary goal of this section ([Predictors for inflation](#predictors-for-inflation)) is to indentify predictors for inflation rate across the rate without limiting the sample to rich country only. In this sense, we need to keep the dataset as wide and long as possible, at least for a first modelization. Thus, we'll drop out variables having a majority of missing values, and simply remove the rest row-wise. Although we could avoid removing some variables by conditioning on a specific population, said richer countries for example, we chose to look at inflation rate at its globality. Keeping those variable would introduce a clear sampling bias, hence why we remove them.
 
 Depending on the analysis goal, the way we handle data and missing value would naturally change.
 
@@ -838,49 +873,11 @@ join_labeled_clean %>%
     unique(.)
 ```
 
+### Modeling
 
-### Correlation analysis
-
-Compared to the initial analysis done for cleaning purpose, nothinng much really change. `broad_money_pct` is still the best recorded predictor of inflation_rate with a negative association of -0.34. 
-
-Naturally, this doesn't account for potential covariates and non-linear relationships, which for example broad money (%) and inflation have (See [Broad Money - Inflation (%)](#broad-money-(---inflation))).
-
-Other notable relationships are: 
-- `imports_gdp_pct` - `export_gdp_pct`: 0.80702
-- `imports_gdp_pct` - `gdp_usd`: -0.3182
-- `total_reserve_usd` - `broad_money_pct`: 0.5119
-- `total_reserve_usd` - `gdp_usd`: 0.5128
-- `total_reserve_usd` - `gni_usd`: 0.5517
-- `total_reserve_usd` - `enrol_tertiary_gross`: 0.3063
-- `gni_usd` - `gdp_usd`: 0.9884
-- `urban_pop_pct` - `net_enrol_primary`: 0.4961
-- `urban_pop_pct` - `net_enrol_secondary`: 0.5891
-- `urban_pop_pct` - `enrol_tertiary_gross`: 0.6410
-- `net_enrol_secondary` - `enrol_tertiary_gross`: 0.7927
-
-The correlation between those economic indicator such as the total reseve in usd and other indicators linked to the financial well-being of an economic such as GDP, GNI and broad money make sense. 
-Additionnaly, we can also observe high collinearity between GDP and GNI. While GNI measure each resident's final income (wages, investments, ..), GDP measure the value of the goods produced in a country. Such a high relationships make sense since GDP is used to compute the GNI.
-The high relationship between imports and exports would mean that the more a country imports, the more it exports. In this scenario, we could imagine the intervention of confounder variables driving this relationship. Indeed, imports and exports rate could act a proxy for financial well-being of an economy. Hence, the more a country imports, the better his economy, the better his economy, the more it produces, the more it produces, the more it exports. Especially, since imports and exports are computed in percentages of the GDP.
-
-Sadly, there is no major relationship recorded with the inflation rate.
-
-```{r}
-cor_matrix_clean <- join_labeled_clean %>% 
-    select(where(is.numeric)) %>% 
-    cor(.)
-```
-
-
-### Fixed-Effects models
-
-In this present section, we'll look at the previous identified top predictors and analyze the different fixed-effects occuring and impacting the estimates. For this we'll use the `fixest` library in conjunction with the `etable` library for clear comparison.
-
-```{r}
-nullw_fixest <- feols(fml = inflation_pct ~ ), data = join_labeled)
-```
+In this present section, we'll try to find specific effects influencing inflation rate. The previous correlation exploration shown interesting relationships and distribution, most of them being highly non-linear.
 
 ### Broad Money (%) - Inflation
-
 
 The relationships between broad money and inflation isn't linear. This is likely the case because highly asymetric distribution of inflation and broad money. Indeed, as demonstrated below, they both come from a gamma distribution
 
@@ -1053,6 +1050,62 @@ join_labeled %>%
         geom_point(alpha = 0.5) +
         labs(x = "Life expectancy", y = "GDP (USD)", title="Scatterplot")
     theme_bw()
+```
+
+### GDP - Inflation
+
+Looking at the distribution of GDP, we observe something akin to an extreme power-law distribution. The extreme amount of extreme values bias a linear relation ship estimation. Additionnaly, most country observation are stacked to the left, with high inflation. Reducing the amount of observation and only observing the average inflation per country reduces the stacking and increase the linear coefficient.
+
+```{r}
+join_labeled %>% 
+    ggplot(
+        data = .,
+        mapping = aes(x = gdp_usd, y = inflation_pct)
+    ) +
+    geom_smooth(color = "black", method="lm") +
+    geom_point(color = "#2683e0ff", alpha = 0.5) +
+    labs(x = "GDP ($)", y = "Inflation (%)", title = " GDP - Inflation relationship") +
+    theme_minimal()
+```
+
+```{r}
+join_labeled %>% 
+    group_by(country) %>%
+    mutate_if(.predicate = is.numeric, .funs = ~ mean(., na.rm = TRUE)) %>% 
+    ungroup() %>% 
+    ggplot(
+        data = .,
+        mapping = aes(x = gdp_usd, y = inflation_pct)
+    ) +
+    geom_point(color = "#2683e0ff", alpha = 0.025) +
+    geom_smooth(color = "black", alpha = 0, method="lm") +
+    labs(x = "GDP ($)", y = "Mean Inflation per Country(%)", title = "GDP - Mean Inflation Relationship") +
+    theme_minimal()
+```
+
+```{r}
+join_labeled %>%
+    ggplot(
+        data = .
+    ) +
+    geom_density(
+        mapping = aes(x = gdp_usd, color = "GDP"), fill = "#1f78d1ff", alpha = 0.3) +
+    scale_color_manual(values = c("GDP" = "#1f78d1ff")) +
+    labs(x = "GDP ($)", y = "Density", title = "GDP Distribution", color = "Distribution") +
+    theme_minimal()
+```
+
+```{r}
+join_labeled %>%
+    select(gdp_usd, wealth_class) %>% 
+    drop_na() %>% 
+    ggplot(
+        data = .
+    ) +
+    geom_density(
+        mapping = aes(x = gdp_usd, fill = wealth_class), alpha = 0.3, size = 0.2) +
+    labs(x = "GDP", y = "Density", title = "GDP Distribution") +
+    theme_minimal()
 ```
 
 # Sources
