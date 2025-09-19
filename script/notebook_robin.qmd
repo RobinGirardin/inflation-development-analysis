@@ -773,9 +773,6 @@ The reason for this (see [GDP - Inflation](#gdp---inflation)) is the massive ext
 On top of that, there are too many effects going on influencing the association. For example, time-varying and time-invarying effect aren't taken into account here. 
 
 ```{r}
-join_labeled %>% 
-    group_by(country) %>% 
-    mutate()
 cor_matrix <- join_labeled %>% 
     select(where(is.numeric)) %>% 
     cor(., use = "complete.obs")
@@ -811,8 +808,6 @@ cor_matrix_clean <- join_labeled_clean %>%
     cor(.)
 
 print(cor_matrix_clean)
-
-print(sort(cor_matrix_clean[, "inflation_pct"]))
 ```
 
 
@@ -845,6 +840,14 @@ cor_matrix %>%
 cor_matrix_na <- cbind(join_labeled_na, cor_matrix)
 
 print(cor_matrix_na %>% select(-vars))
+
+join_labeled_clean <- join_labeled %>% 
+    select(
+        -life_expectancy,
+        -altas_conversation_factor,
+        -fertility_rate,
+        -population_total) %>% 
+    drop_na()
 ```
 
 Because of the amount predictors we would like to instpect, the cleaning reduced drastically the size of the dataset from `{r} dim(join_labeled)[1]` to `{r} dim(join_labeled_cleaned)[1]`. Although we managed to preserve a relatively unbiased population, the poorest country are almost absent of the dataset.
@@ -873,16 +876,77 @@ join_labeled_clean %>%
     unique(.)
 ```
 
-### Modeling
+### Modeling (Chapter of Choice)
 
 In this present section, we'll try to find specific effects influencing inflation rate. The previous correlation exploration shown interesting relationships and distribution, most of them being highly non-linear with long tails. A solution to this would be to perform a log-transformation on the dependant variable and its predictors. This logarithmic transformation can, among other things, shrink long details distribution to more normal distribution. As demonstrated in [GDP - Inflation](#gdp---inflation) and [Broad Money - Inflation](#broad-money-(---inflation)), this works exceptionaly well.
 
-This small trick enable us to use a linear models. Due to the fact that our data is panel data, we'll use fixed-effects models to account for time and country fixed effects. However, before this, I'd like to perform another correlation exploration, log-transformed this time, for the inflation rate. This way, we'll see have a less biased view of potential predictors.
+This small trick enable us to use a linear models. Due to the fact that our data is panel data, we'll use fixed-effects models to account for time and country fixed effects. However, before this, I'd like to perform another correlation exploration, log-transformed this time, for the inflation rate. This way, we'll see have a less biased view of potential predictors. Sadly, log-transformation doesn't work with negative values. However, filtering them isn't conceptually wrong since we focus on 'inflation' and not 'deflation'.
+
+Overall, we can see that the logarithmic transformation increased overall most of the coefficient. Important increase, relative to their original coefficient, can be seen in most 'economical' oriented factors such as `gdp_usd`, `gdp_growth_pct` or `gni_usd`, as well as other factors such as `enrol_tertiary_gross` and `urban_pop_pct`. However, most 'social' factors seems to be better predictors or inflation that econonmical factors, except for broad money (%).
 
 ```{r}
+log_cormatrix <- join_labeled_clean %>% 
+    select(where(is.numeric), -year) %>%
+    filter(if_all(everything(), ~ .x > 0)) %>%
+    mutate_all(log) %>% 
+    cor(.) %>% 
+    as.data.frame(.)
 
+cormatrix <- join_labeled_clean %>% 
+    select(where(is.numeric), -year) %>% 
+    cor(.) %>% 
+    as.data.frame(.)
+
+data.frame(
+    log_p = log_cormatrix$inflation_pct,
+    p = cormatrix$inflation_pct,
+    row.names = row.names(log_cormatrix)
+) %>% arrange(log_p)
 ```
 
+Since we have some autocorrelation, we compute the standards error using the clustering method.
+
+We observe that there is no evidence against the null hypothesis that the predictors ceofficient are different from 0 for both the fixed-effects model accounting for country and country + time fixed-effects.
+Accounting for only time fixed-effects, we observe strong evidence against the null hypothesis that 'broad money (%)' coefficient is equal to 0, as well as some evidence against the null hypothesis that 'enrol_tertiary_gross' coefficient is equal to 0.
+
+This difference suggest some kind of interaction between location and time fixed effect, as well as a strong bias on broad money predictors and tertiary enrollement introduced by the location. This means that there are strong time-invariant cofounder effects on those 2 predictors. This makes sense, as, as we can see in [Broad Money - Inflation](#broad-money-(---inflation)), there big broad money variation between wealth_class.
+
+```{r}
+fixe_i <- feols(fml = inflation_pct ~ broad_money_pct + urban_pop_pct + enrol_tertiary_gross + net_enrol_primary + net_enrol_secondary + gdp_usd + total_reserve_usd | country, data = join_labeled_clean, se = "cluster")
+
+fixe_t <- feols(fml = inflation_pct ~ broad_money_pct + urban_pop_pct + enrol_tertiary_gross + net_enrol_primary + net_enrol_secondary + gdp_usd + total_reserve_usd | year, data = join_labeled_clean, se = "cluster")
+
+fixe_it <- feols(fml = inflation_pct ~ broad_money_pct + urban_pop_pct + enrol_tertiary_gross + net_enrol_primary + net_enrol_secondary + gdp_usd + total_reserve_usd | country+year, data = join_labeled_clean, se = "cluster")
+
+etable(fixe_i, fixe_t, fixe_it)
+```
+
+**Fixed-effects model with log-transformation**
+
+Incorporating the log-transformation lead to different result.
+
+We have some evidence against the null hypothesis that the coefficient of `broad_money_pct`, `net_enrol_secondary` and `total_reserve_usd` are different from 0. 
+
+Firstly, a 1% increase in the amount of financial instruments possessed by a country would lead to a 0.8571% percent increase in inflation rate. Although one might think that the more broad money a country has, the less inflation it would subject to as associating broad money with wealth seems logical. [.........] 
+
+Secondly, a 1% percent increase in the amount of enrollement in secondary education (ratio based on enrollmenet / not enrolled) would decrease the inflation rate by 1.614%.
+
+Thirdly, a 1% percent increase in the bank liquid reserve would decrease the inflation rate by 0.299%.
+
+```{r}
+vars = colnames(join_labeled_clean %>% select(-country, -year, -iso2c, -iso3c, -wealth_class))
+log_clean <- join_labeled_clean %>% 
+    filter(if_all(everything(), ~ .x > 0)) %>% 
+    mutate_at(.vars = vars, .funs = log)
+
+fixelog_i <- feols(fml = inflation_pct ~ broad_money_pct + urban_pop_pct + enrol_tertiary_gross + net_enrol_primary + net_enrol_secondary + gdp_usd + total_reserve_usd | country, data = log_clean, se = "cluster")
+
+fixelog_t <- feols(fml = inflation_pct ~ broad_money_pct + urban_pop_pct + enrol_tertiary_gross + net_enrol_primary + net_enrol_secondary + gdp_usd + total_reserve_usd | year, data = log_clean, se = "cluster")
+
+fixelog_it <- feols(fml = inflation_pct ~ broad_money_pct + urban_pop_pct + enrol_tertiary_gross + net_enrol_primary + net_enrol_secondary + gdp_usd + total_reserve_usd | country+year, data = log_clean, se = "cluster")
+
+etable(fixelog_i, fixelog_t, fixelog_it)
+```
 # Appendix
 
 ## Broad Money (%) - Inflation
