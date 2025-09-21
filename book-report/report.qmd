@@ -1,0 +1,250 @@
+---
+title: "Inflation Developement"
+subtitle: "An exploration of patterns and predictors"
+author:
+    - name: Girardin Robin
+    - name: Geogantopoulos Nikolaos
+institute: "G & G Data Science Cabinet"
+execute: 
+    echo: false
+    include: false
+    message: false
+    warning: false
+format: 
+    html: 
+        toc: true
+        toc-float: true
+filters:
+    - shinylive
+---
+
+Inflation influences consumer purchasing power, economic growth, buisinesses developpement and competiteveness, central banks interests rates. As such, understand such an important factor of nowadays economy is crucial. Even more so considerinng the actual political and economical turbulence.
+
+We were mandated by [World Bank Group](#https://www.worldbank.org/ext/en/home), Departement of Developement Economics, to explore data at their disposal and determine inflation developement patterns and predictors. More specifically, this report targets the following questions: 
+
+- How is inflation distributed?
+- How does inflation develops from 2000 until todays?
+- How does crisis influence inflation markers?
+- Which indicators could be used to predict inflation rates?
+
+```{r}
+library(DT)
+library(dplyr)
+library(ggplot2)
+library(maps)
+library(sf)
+library(plotly)
+library(shiny)
+
+source("/Users/robingirardin/school/inflation-developement/script/utils.R")
+```
+
+```{r}
+join_labeled <- readRDS("/Users/robingirardin/school/inflation-developement/data/processed/join_labeled.rds")
+```
+
+
+# Overview of the data
+
+The main information available is composed yearly records of multiple indicators across multiple countries. In total, information on 19 indicators over 210 different countries from 2000 up to 2014 was recolted. This information can be downloaded publicly from the dedicated website [World Bank Open Data](https://data.worldbank.org/indicator) or through the R -`WDI`- package. Indicators include markers of economical and financial factors such as GDP, GPD growth, GNI, total governement reserved in USD or socio-economical factors such as population, enrollement in primary, secondary and tertiary schools or fertility rate. See [Appendix A1](#a1.-indicators) for an overview and description of every indicators.
+
+As differentiation between 210 different countries can prove to be difficult. Fortunately, the World Bank Group provides a robust and systematic methodology for classifying countries by income level[^atlas-blog]. This classification is based on the Gross National Income in US dollar for each country. The classification differ every year. [Appendix A2](#a2.-wealth-classes-(2000-2024)) displays the full extrend of the income classes requirement for every year.
+
+[^atlas-blog]: [A World Bank Blog article about the methodology](https://blogs.worldbank.org/en/opendata/world-bank-country-classifications-by-income-level-for-2024-2025)
+
+
+| Label | 2022 | 2023 | 2024 |
+|-------|------|------|------|
+| High (H) | <= ,.135 | <= 1,145 | <= 1,135 |
+| Upper Middle (UM) | 1,136 - 4,465| 1,146 - 4,515 | 1,136 - 4,495 |
+| Lower Middle (LM) | 4,466 - 13,845 | 4,516 - 14,005 | 4,496 - 13,935 |
+| Low (L) | > 13,845 | > 14,005 | > 13,935 |
+
+: Wealth classes {#tbl-wealth-meta}
+
+::: {#tbl-panel layout-ncol=2}
+| Variable | Type | NaN | Unique |
+|----------|------|-----|--------|
+| country  | Categorical | 0 | x |
+| iso2c    | Categorical | 0 | x |
+| iso3c    | Categorical | 0 | x |
+| wealth_class | Categorical | 0 | 4 |
+
+: Identifier {#tbl-first}
+
+| Col1 | Col2 | Col3 |
+|------|------|------|
+| A    | B    | C    |
+| E    | F    | G    |
+| A    | G    | G    |
+
+: Economical Indicator {#tbl-second}
+
+| Col1 | Col2 | Col3 |
+|------|------|------|
+| A    | B    | C    |
+| E    | F    | G    |
+| A    | G    | G    |
+
+: Socio-economial Indicator {#tbl-second}
+
+Data overview
+:::
+
+For more insights into the joining process, refer to [data_joining](data_joining.qmd).
+
+## Missing Values
+
+As @tbl-panel shows, some indicators contain a lot of missing values. Handling missing values should be done with care, as it influences the quality of the overall dataset and thus the prediction. Indeed, in our case removing rows containing missing values could bias the analysis, as the proportion of missing values in country with lower income is different than in country with higher income. Additionnaly, removing entire column could prove detrimental to the overall analysis as we could inadvertently remove important informations. Thus, the removal strategy will depend in the analysis performed.
+
+In the graph below, you can observe the map representation of those missing values, across all countries and summed up over the years.
+[]
+
+Since our time granularity is year, this means that countries in red provide very few information at all. Additionnaly, even though european countries seems to contain less missing values than others countries, they are not exempt of them.
+
+```{r}
+# Number of total missing value per country per year
+na_count <- join_labeled %>% 
+    group_by(country) %>% 
+    summarise(na_count = sum(across(everything(), ~ is.na(.))))
+```
+
+```{r}
+# Devise a plain minimalistic theme
+plain <- theme(
+  axis.text = element_blank(),
+  axis.line = element_blank(),
+  axis.ticks = element_blank(),
+  panel.border = element_blank(),
+  panel.grid = element_blank(),
+  axis.title = element_blank(),
+  panel.background = element_rect(fill = "white"),
+  plot.title = element_text(hjust = 0.5)
+)
+
+# Get world's countries coordinates
+map <- map_data("world") %>% 
+    # Join countries coordinates with NaN's summary
+    inner_join(., na_count, by=c("region"="country"))
+
+# Create a map of the world, filled by amount of NaN's per countries
+worldplot <- map %>% 
+    ggplot(
+        data = .,
+        mapping = aes(x = long, y = lat)) +
+    coord_fixed(1.3) +
+    geom_polygon(
+        mapping = aes(fill = na_count, group = group)) +
+    scale_fill_distiller(palette = "RdBu") +
+    ggtitle("Total missing value per country") +
+    plain
+
+ggplotly(worldplot)
+```
+
+```{shinylive-r}
+#| standalone: true
+
+ui <- page_sidebar(
+    # Sidebar panels for inputs
+    sidebar <- sidebar(
+        select_list <- selectizeInput(
+            inputId = "indicator",
+            label = "Select your indicator",
+            choices = worldmap_selectizeInput_choices()
+        )
+    )
+    plotlyOutput(outputId = "worldmap")
+)
+
+server <- function(input, output, ...) {
+    output$worldmap <- renderPlotly({
+        
+    })
+}
+```
+
+# Source
+
+Indicator dataset:
+
+1. [World Bank Group](https://data.worldbank.org/indicator)
+2. [WDI](https://cran.r-project.org/web/packages/WDI/WDI.pdf)
+3. ['join.rds'](data/processed/join.rds)
+
+Wealth classification dataset: 
+
+1. [Wealth Classification](https://datahelpdesk.worldbank.org/knowledgebase/articles/906519-world-bank-country-and-lending-groups)
+
+# Appendix
+
+## A1. Indicators
+
+Find below a short description of each indicators composing the main dataset. The description has the following format
+
+* `WDI` indicator code (human readable label): description
+
+**Description:**
+
+* FP.CPI.TOTL.ZG (inflation_pct): Inflation, consumer prices (annual %) — measures the yearly percentage change in consumer prices as measured by the consumer price index. 
+
+* GC.DOD.TOTL.GD.ZS (debt_gdp_pct): Central government debt, total (% of GDP) — the stock of direct government debt liabilities as a share of gross domestic product.
+
+* NY.GDP.MKTP.KD.ZG (gdp_growth_pct): GDP growth (annual %) —  the total income earned through the production of goods and services in an economic territory during an accounting period. Measured in USD.  
+
+* NY.GDP.MKTP.CD (gdp_usd): GDP (current US$) — the total monetary value of all goods and services produced in an economy, measured at current U.S. dollar exchange rates. 
+
+* SL.UEM.TOTL.ZS (unemployment_pct): Unemployment, total (% of labor force) — the share of the labor force that is without work but available for and seeking employment.  
+
+* NE.EXP.GNFS.ZS (exports_gdp_pct): Exports of goods and services (% of GDP) — exports of goods and non-factor services as a percentage of GDP.
+
+* NE.IMP.GNFS.ZS (imports_gdp_pct): Imports of goods and services (% of GDP) — imports of goods and non-factor services as a percentage of GDP.
+
+* SP.POP.TOTL (population_total): Population, total — the total population of a country.
+
+* FM.LBL.BMNY.GD.ZS (broad_money_pct): Broad money (% of GDP) — the sum of all liquid financial instruments held by money-holding sectors that are widely accepted in an economy as a medium of exchange expressed as a share of GDP. 
+
+* FI.RES.TOTL.CD (total_reserve_usd): Reserves and related items (total reserves in current US$) — the stock of a country’s foreign exchange and gold reserves. 
+
+* NY.GNP.MKTP.PP.CD (gni_usd): GNI, PPP (current international $) — gross national income converted to international dollars using purchasing power parity (PPP) conversion factors. 
+
+* PA.NUS.PPP (altas_conversion_factor): Atlas conversion factor — World Bank’s Atlas method to convert national currencies into U.S. dollars to smooth exchange rate fluctuations. 
+
+* SP.URB.TOTL.IN.ZS (urban_pop_pct): Urban population (% of total) — the percentage of a country’s population living in urban areas.
+
+* SP.DYN.LE00.IN (life_expectancy): Life expectancy at birth, total (years) — the average number of years a newborn is expected to live if current mortality rates continue to apply.
+
+* SE.PRM.NENR (net_enrol_primary): School enrollment, primary (% net) — net enrollment rate in primary education: pupils of official primary school age enrolled as a proportion of the total population of that age.
+
+* SE.SEC.NENR (net_enrol_secondary): School enrollment, secondary (% net) — net enrollment rate in secondary education. 
+
+* SE.TER.ENRR (enrol_tertiary_gross): School enrollment, tertiary (% gross) — the gross enrollment ratio for tertiary education: total enrollment in tertiary education, regardless of age, expressed as a percentage of the official tertiary education age. 
+
+* SP.DYN.TFRT.IN (fertility_rate): Fertility rate, total (births per woman) — the average number of children that would be born to a woman over her lifetime if she were to experience the age-specific fertility rates of a given period.  
+
+* SP.POP.GROW (pop_growth_pct): Population growth (annual %) — the annual percentage growth rate of the total population, including the effects of natural increase and net migration.
+
+## A2. Wealth classes (2000-2024)
+
+Find below the classification rule for the income level classes from 2000 until 2024.
+
+* L: low income class
+* LM: lower middle income class
+* UM: upper middle income class
+* H: High income class
+
+```{r}
+#| include: true
+wealth <- read.csv("/Users/robingirardin/school/inflation-developement/data/raw/country_wealth_labels_meta.csv")
+
+# Remove the 'X' in the years column
+colnames(wealth) <- append(c("labels"), sapply(seq(1987, 2024), FUN = as.character))
+
+wealth %>% 
+    select("labels", "2000":"2024") %>% 
+    DT::datatable(
+        .,
+        options = list(
+            dom = 't'
+        ))
+```

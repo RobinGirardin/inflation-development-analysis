@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.32">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Girardin Robin">
+<meta name="author" content="Geogantopoulos Nikolaos">
+
+<title>Inflation Developement</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="report_files/libs/clipboard/clipboard.min.js"></script>
+<script src="report_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="report_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="report_files/libs/quarto-html/popper.min.js"></script>
+<script src="report_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="report_files/libs/quarto-html/anchor.min.js"></script>
+<link href="report_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="report_files/libs/quarto-html/quarto-syntax-highlighting-37eea08aefeeee20ff55810ff984fec1.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="report_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="report_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="report_files/libs/bootstrap/bootstrap-81267100e462c21b3d6c0d5bf76a3417.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="report_files/libs/htmltools-fill-0.5.8.1/fill.css" rel="stylesheet">
+<script src="report_files/libs/htmlwidgets-1.6.4/htmlwidgets.js"></script>
+<script src="report_files/libs/plotly-binding-4.11.0/plotly.js"></script>
+<script src="report_files/libs/typedarray-0.1/typedarray.min.js"></script>
+<script src="report_files/libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<link href="report_files/libs/crosstalk-1.2.1/css/crosstalk.min.css" rel="stylesheet">
+<script src="report_files/libs/crosstalk-1.2.1/js/crosstalk.min.js"></script>
+<link href="report_files/libs/plotly-htmlwidgets-css-2.11.1/plotly-htmlwidgets.css" rel="stylesheet">
+<script src="report_files/libs/plotly-main-2.11.1/plotly-latest.min.js"></script>
+<link href="report_files/libs/datatables-css-0.0.0/datatables-crosstalk.css" rel="stylesheet">
+<script src="report_files/libs/datatables-binding-0.33/datatables.js"></script>
+<link href="report_files/libs/dt-core-1.13.6/css/jquery.dataTables.min.css" rel="stylesheet">
+<link href="report_files/libs/dt-core-1.13.6/css/jquery.dataTables.extra.css" rel="stylesheet">
+<script src="report_files/libs/dt-core-1.13.6/js/jquery.dataTables.min.js"></script>
+
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#overview-of-the-data" id="toc-overview-of-the-data" class="nav-link active" data-scroll-target="#overview-of-the-data">Overview of the data</a>
+  <ul class="collapse">
+  <li><a href="#missing-values" id="toc-missing-values" class="nav-link" data-scroll-target="#missing-values">Missing Values</a></li>
+  </ul></li>
+  <li><a href="#source" id="toc-source" class="nav-link" data-scroll-target="#source">Source</a></li>
+  <li><a href="#appendix" id="toc-appendix" class="nav-link" data-scroll-target="#appendix">Appendix</a>
+  <ul class="collapse">
+  <li><a href="#a1.-indicators" id="toc-a1.-indicators" class="nav-link" data-scroll-target="#a1.-indicators">A1. Indicators</a></li>
+  <li><a href="#a2.-wealth-classes-2000-2024" id="toc-a2.-wealth-classes-2000-2024" class="nav-link" data-scroll-target="#a2.-wealth-classes-2000-2024">A2. Wealth classes (2000-2024)</a></li>
+  </ul></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Inflation Developement</h1>
+<p class="subtitle lead">An exploration of patterns and predictors</p>
+</div>
+
+
+<div class="quarto-title-meta-author">
+  <div class="quarto-title-meta-heading">Authors</div>
+  <div class="quarto-title-meta-heading">Affiliation</div>
+  
+    <div class="quarto-title-meta-contents">
+    <p class="author">Girardin Robin </p>
+  </div>
+  <div class="quarto-title-meta-contents">
+        <p class="affiliation">
+            G &amp; G Data Science Cabinet
+          </p>
+      </div>
+    <div class="quarto-title-meta-contents">
+    <p class="author">Geogantopoulos Nikolaos </p>
+  </div>
+  <div class="quarto-title-meta-contents">
+      </div>
+  </div>
+
+<div class="quarto-title-meta">
+
+      
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>Inflation influences consumer purchasing power, economic growth, buisinesses developpement and competiteveness, central banks interests rates. As such, understand such an important factor of nowadays economy is crucial. Even more so considerinng the actual political and economical turbulence.</p>
+<p>We were mandated by <a href="#https://www.worldbank.org/ext/en/home">World Bank Group</a>, Departement of Developement Economics, to explore data at their disposal and determine inflation developement patterns and predictors. More specifically, this report targets the following questions:</p>
+<ul>
+<li>How is inflation distributed?</li>
+<li>How does inflation develops from 2000 until todays?</li>
+<li>How does crisis influence inflation markers?</li>
+<li>Which indicators could be used to predict inflation rates?</li>
+</ul>
+<section id="overview-of-the-data" class="level1">
+<h1>Overview of the data</h1>
+<p>The main information available is composed yearly records of multiple indicators across multiple countries. In total, information on 19 indicators over 210 different countries from 2000 up to 2014 was recolted. This information can be downloaded publicly from the dedicated website <a href="https://data.worldbank.org/indicator">World Bank Open Data</a> or through the R -<code>WDI</code>- package. Indicators include markers of economical and financial factors such as GDP, GPD growth, GNI, total governement reserved in USD or socio-economical factors such as population, enrollement in primary, secondary and tertiary schools or fertility rate. See <a href="#a1.-indicators">Appendix A1</a> for an overview and description of every indicators.</p>
+<p>As differentiation between 210 different countries can prove to be difficult. Fortunately, the World Bank Group provides a robust and systematic methodology for classifying countries by income level<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>. This classification is based on the Gross National Income in US dollar for each country. The classification differ every year. <a href="#a2.-wealth-classes-(2000-2024)">Appendix A2</a> displays the full extrend of the income classes requirement for every year.</p>
+<div id="tbl-wealth-meta" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-wealth-meta-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;1: Wealth classes
+</figcaption>
+<div aria-describedby="tbl-wealth-meta-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Label</th>
+<th>2022</th>
+<th>2023</th>
+<th>2024</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>High (H)</td>
+<td>&lt;= ,.135</td>
+<td>&lt;= 1,145</td>
+<td>&lt;= 1,135</td>
+</tr>
+<tr class="even">
+<td>Upper Middle (UM)</td>
+<td>1,136 - 4,465</td>
+<td>1,146 - 4,515</td>
+<td>1,136 - 4,495</td>
+</tr>
+<tr class="odd">
+<td>Lower Middle (LM)</td>
+<td>4,466 - 13,845</td>
+<td>4,516 - 14,005</td>
+<td>4,496 - 13,935</td>
+</tr>
+<tr class="even">
+<td>Low (L)</td>
+<td>&gt; 13,845</td>
+<td>&gt; 14,005</td>
+<td>&gt; 13,935</td>
+</tr>
+</tbody>
+</table>
+</div>
+</figure>
+</div>
+<div id="tbl-panel" class="quarto-layout-panel anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-panel-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;2: Data overview
+</figcaption>
+<div aria-describedby="tbl-panel-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="tbl-panel" style="flex-basis: 50.0%;justify-content: center;">
+<div id="tbl-first" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-subfloat-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-subfloat-caption quarto-subfloat-tbl" id="tbl-first-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+(a) Identifier
+</figcaption>
+<div aria-describedby="tbl-first-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Variable</th>
+<th style="text-align: left;">Type</th>
+<th style="text-align: left;">NaN</th>
+<th style="text-align: left;">Unique</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">country</td>
+<td style="text-align: left;">Categorical</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">x</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">iso2c</td>
+<td style="text-align: left;">Categorical</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">x</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">iso3c</td>
+<td style="text-align: left;">Categorical</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">x</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">wealth_class&nbsp;</td>
+<td style="text-align: left;">Categorical</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">4&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</div>
+</figure>
+</div>
+</div>
+<div class="quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="tbl-panel" style="flex-basis: 50.0%;justify-content: center;">
+<div id="tbl-second" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-subfloat-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-subfloat-caption quarto-subfloat-tbl" id="tbl-second-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+(b) Economical Indicator
+</figcaption>
+<div aria-describedby="tbl-second-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Col1</th>
+<th style="text-align: left;">Col2</th>
+<th style="text-align: left;">Col3</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">A</td>
+<td style="text-align: left;">B</td>
+<td style="text-align: left;">C</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">E</td>
+<td style="text-align: left;">F</td>
+<td style="text-align: left;">G</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">A</td>
+<td style="text-align: left;">G</td>
+<td style="text-align: left;">G</td>
+</tr>
+</tbody>
+</table>
+</div>
+</figure>
+</div>
+</div>
+</div>
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="tbl-panel" style="flex-basis: 50.0%;justify-content: center;">
+<div id="tbl-second" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-subfloat-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-subfloat-caption quarto-subfloat-tbl" id="tbl-second-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+(c) Socio-economial Indicator
+</figcaption>
+<div aria-describedby="tbl-second-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Col1</th>
+<th style="text-align: left;">Col2</th>
+<th style="text-align: left;">Col3</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">A</td>
+<td style="text-align: left;">B</td>
+<td style="text-align: left;">C</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">E</td>
+<td style="text-align: left;">F</td>
+<td style="text-align: left;">G</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">A</td>
+<td style="text-align: left;">G</td>
+<td style="text-align: left;">G</td>
+</tr>
+</tbody>
+</table>
+</div>
+</figure>
+</div>
+</div>
+</div>
+</div>
+</figure>
+</div>
+<p>For more insights into the joining process, refer to <a href="data_joining.qmd">data_joining</a>.</p>
+<section id="missing-values" class="level2">
+<h2 class="anchored" data-anchor-id="missing-values">Missing Values</h2>
+<p>As <a href="#tbl-panel" class="quarto-xref">Table&nbsp;2</a> shows, some indicators contain a lot of missing values. Handling missing values should be done with care, as it influences the quality of the overall dataset and thus the prediction. Indeed, in our case removing rows containing missing values could bias the analysis, as the proportion of missing values in country with lower income is different than in country with higher income. Additionnaly, removing entire column could prove detrimental to the overall analysis as we could inadvertently remove important informations. Thus, the removal strategy will depend in the analysis performed.</p>
+<p>In the graph below, you can observe the map representation of those missing values, across all countries and summed up over the years. []</p>
+<p>Since our time granularity is year, this means that countries in red provide very few information at all. Additionnaly, even though european countries seems to contain less missing values than others countries, they are not exempt of them.</p>
+</section>
+</section>
+<section id="source" class="level1">
+<h1>Source</h1>
+<p>Indicator dataset:</p>
+<ol type="1">
+<li><a href="https://data.worldbank.org/indicator">World Bank Group</a></li>
+<li><a href="https://cran.r-project.org/web/packages/WDI/WDI.pdf">WDI</a></li>
+<li><a href="data/processed/join.rds">‘join.rds’</a></li>
+</ol>
+<p>Wealth classification dataset:</p>
+<ol type="1">
+<li><a href="https://datahelpdesk.worldbank.org/knowledgebase/articles/906519-world-bank-country-and-lending-groups">Wealth Classification</a></li>
+</ol>
+</section>
+<section id="appendix" class="level1">
+<h1>Appendix</h1>
+<section id="a1.-indicators" class="level2">
+<h2 class="anchored" data-anchor-id="a1.-indicators">A1. Indicators</h2>
+<p>Find below a short description of each indicators composing the main dataset. The description has the following format</p>
+<ul>
+<li><code>WDI</code> indicator code (human readable label): description</li>
+</ul>
+<p><strong>Description:</strong></p>
+<ul>
+<li><p>FP.CPI.TOTL.ZG (inflation_pct): Inflation, consumer prices (annual %) — measures the yearly percentage change in consumer prices as measured by the consumer price index.</p></li>
+<li><p>GC.DOD.TOTL.GD.ZS (debt_gdp_pct): Central government debt, total (% of GDP) — the stock of direct government debt liabilities as a share of gross domestic product.</p></li>
+<li><p>NY.GDP.MKTP.KD.ZG (gdp_growth_pct): GDP growth (annual %) — the total income earned through the production of goods and services in an economic territory during an accounting period. Measured in USD.</p></li>
+<li><p>NY.GDP.MKTP.CD (gdp_usd): GDP (current US$) — the total monetary value of all goods and services produced in an economy, measured at current U.S. dollar exchange rates.</p></li>
+<li><p>SL.UEM.TOTL.ZS (unemployment_pct): Unemployment, total (% of labor force) — the share of the labor force that is without work but available for and seeking employment.</p></li>
+<li><p>NE.EXP.GNFS.ZS (exports_gdp_pct): Exports of goods and services (% of GDP) — exports of goods and non-factor services as a percentage of GDP.</p></li>
+<li><p>NE.IMP.GNFS.ZS (imports_gdp_pct): Imports of goods and services (% of GDP) — imports of goods and non-factor services as a percentage of GDP.</p></li>
+<li><p>SP.POP.TOTL (population_total): Population, total — the total population of a country.</p></li>
+<li><p>FM.LBL.BMNY.GD.ZS (broad_money_pct): Broad money (% of GDP) — the sum of all liquid financial instruments held by money-holding sectors that are widely accepted in an economy as a medium of exchange expressed as a share of GDP.</p></li>
+<li><p>FI.RES.TOTL.CD (total_reserve_usd): Reserves and related items (total reserves in current US$) — the stock of a country’s foreign exchange and gold reserves.</p></li>
+<li><p>NY.GNP.MKTP.PP.CD (gni_usd): GNI, PPP (current international $) — gross national income converted to international dollars using purchasing power parity (PPP) conversion factors.</p></li>
+<li><p>PA.NUS.PPP (altas_conversion_factor): Atlas conversion factor — World Bank’s Atlas method to convert national currencies into U.S. dollars to smooth exchange rate fluctuations.</p></li>
+<li><p>SP.URB.TOTL.IN.ZS (urban_pop_pct): Urban population (% of total) — the percentage of a country’s population living in urban areas.</p></li>
+<li><p>SP.DYN.LE00.IN (life_expectancy): Life expectancy at birth, total (years) — the average number of years a newborn is expected to live if current mortality rates continue to apply.</p></li>
+<li><p>SE.PRM.NENR (net_enrol_primary): School enrollment, primary (% net) — net enrollment rate in primary education: pupils of official primary school age enrolled as a proportion of the total population of that age.</p></li>
+<li><p>SE.SEC.NENR (net_enrol_secondary): School enrollment, secondary (% net) — net enrollment rate in secondary education.</p></li>
+<li><p>SE.TER.ENRR (enrol_tertiary_gross): School enrollment, tertiary (% gross) — the gross enrollment ratio for tertiary education: total enrollment in tertiary education, regardless of age, expressed as a percentage of the official tertiary education age.</p></li>
+<li><p>SP.DYN.TFRT.IN (fertility_rate): Fertility rate, total (births per woman) — the average number of children that would be born to a woman over her lifetime if she were to experience the age-specific fertility rates of a given period.</p></li>
+<li><p>SP.POP.GROW (pop_growth_pct): Population growth (annual %) — the annual percentage growth rate of the total population, including the effects of natural increase and net migration.</p></li>
+</ul>
+</section>
+<section id="a2.-wealth-classes-2000-2024" class="level2">
+<h2 class="anchored" data-anchor-id="a2.-wealth-classes-2000-2024">A2. Wealth classes (2000-2024)</h2>
+<p>Find below the classification rule for the income level classes from 2000 until 2024.</p>
+<ul>
+<li>L: low income class</li>
+<li>LM: lower middle income class</li>
+<li>UM: upper middle income class</li>
+<li>H: High income class</li>
+</ul>
+<div class="cell">
+<div class="cell-output-display">
+<div class="datatables html-widget html-fill-item" id="htmlwidget-90f237a429baa6a9bbbd" style="width:100%;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-90f237a429baa6a9bbbd">{"x":{"filter":"none","vertical":false,"data":[["1","2","3","4"],["L","LM","UM","H"],["&lt;= 755","756-2,995","2,996-9,265","&gt; 9,265"],["&lt;= 745","746-2,975","2,976-9,205","&gt; 9,205"],["&lt;= 735","736-2,935","2,936-9,075","&gt; 9,075"],["&lt;= 765","766-3,035","3,036-9,385","&gt; 9,385"],["&lt;= 825","826-3,255","3,256-10,065","&gt; 10,065"],["&lt;= 875","876-3,465","3,466-10,725","&gt; 10,725"],["&lt;= 905","906-3,595","3,596-11,115","&gt; 11,115"],["&lt;= 935","936-3,705","3,706-11,455","&gt; 11,455"],["&lt;= 975","976-3,855","3,856-11,905","&gt; 11,905"],["&lt;= 995","996-3,945","3,946-12,195","&gt; 12,195"],["&lt;= 1,005","1,006-3,975","3,976-12,275","&gt; 12,275"],["&lt;= 1,025","1,026-4,035","4,036-12,475","&gt; 12,475"],["&lt;= 1,035","1,036-4,085","4,086-12,615","&gt; 12,615"],["&lt;= 1,045","1,046-4,125","4,126-12,745","&gt; 12,745"],["&lt;= 1,045","1,046-4,125","4,126-12,735","&gt; 12,735"],["&lt;= 1,025","1,026-4,035","4,036-12,475","&gt; 12,475"],["&lt;= 1,005","1,006-3,955","3,956-12,235","&gt; 12,235"],["&lt;= 995","996-3,895","3,896-12,055","&gt; 12,055"],["&lt;= 1,025","1,026-3,995","3,996-12,375","&gt; 12,375"],["&lt;= 1,035","1,036 - 4,045","4,046 - 12,535","&gt; 12,535"],["&lt;= 1,045","1,046 - 4,095","4,096 - 12,695","&gt; 12,695"],["&lt;= 1,085","1,086 - 4,255","4,256 - 13,205","&gt; 13,205"],["&lt;= 1,135","1,136 - 4,465","4,466 - 13,845","&gt; 13,845"],["&lt;= 1,145","1,146 - 4,515","4,516 - 14,005","&gt; 14,005"],["&lt;= 1,135","1,136 - 4,495","4,496 - 13,935","&gt; 13,935"]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>labels<\/th>\n      <th>2000<\/th>\n      <th>2001<\/th>\n      <th>2002<\/th>\n      <th>2003<\/th>\n      <th>2004<\/th>\n      <th>2005<\/th>\n      <th>2006<\/th>\n      <th>2007<\/th>\n      <th>2008<\/th>\n      <th>2009<\/th>\n      <th>2010<\/th>\n      <th>2011<\/th>\n      <th>2012<\/th>\n      <th>2013<\/th>\n      <th>2014<\/th>\n      <th>2015<\/th>\n      <th>2016<\/th>\n      <th>2017<\/th>\n      <th>2018<\/th>\n      <th>2019<\/th>\n      <th>2020<\/th>\n      <th>2021<\/th>\n      <th>2022<\/th>\n      <th>2023<\/th>\n      <th>2024<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"dom":"t","columnDefs":[{"orderable":false,"targets":0},{"name":" ","targets":0},{"name":"labels","targets":1},{"name":"2000","targets":2},{"name":"2001","targets":3},{"name":"2002","targets":4},{"name":"2003","targets":5},{"name":"2004","targets":6},{"name":"2005","targets":7},{"name":"2006","targets":8},{"name":"2007","targets":9},{"name":"2008","targets":10},{"name":"2009","targets":11},{"name":"2010","targets":12},{"name":"2011","targets":13},{"name":"2012","targets":14},{"name":"2013","targets":15},{"name":"2014","targets":16},{"name":"2015","targets":17},{"name":"2016","targets":18},{"name":"2017","targets":19},{"name":"2018","targets":20},{"name":"2019","targets":21},{"name":"2020","targets":22},{"name":"2021","targets":23},{"name":"2022","targets":24},{"name":"2023","targets":25},{"name":"2024","targets":26}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+</section>
+</section>
+
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p><a href="https://blogs.worldbank.org/en/opendata/world-bank-country-classifications-by-income-level-for-2024-2025">A World Bank Blog article about the methodology</a><a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
