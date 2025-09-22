@@ -62,10 +62,10 @@ main <- WDI(
 # Rename column names for clarity
 colnames(main) <- c("country", "iso2c", "iso3c", "year", indicators_main)
 print("Data extracted")
-# Write file in RDS format if he doesn't exist
-if (!file.exists("data/raw/main.rds")) {
-  print("Path `data/raw/main.rds` don't exist, file will be created in `data/raw/`.")
-  write_rds(main, "data/raw/main.rds")
+# Write file in RDS format if it doesn't exist
+if (!file.exists("../data/raw/main.rds")) {
+  print("Path `../data/raw/main.rds` doesn't exist, file will be created in `../data/raw/`.")
+  write_rds(main, "../data/raw/main.rds")
 }
 
 
@@ -79,9 +79,9 @@ comp <- WDI(
 )
 # Rename column names for clarity
 colnames(comp) <- c("country", "iso2c", "iso3c", "year", indicators_comp)
-# Write file in RDS format if he doesn't exist
-if (!file.exists("data/raw/comp.rds")) {
-  print("Path `data/raw/comp.rds` don't exist, file will be created in `data/raw/`.")
-  write_rds(comp, "data/raw/comp.rds")
+# Write file in RDS format if it doesn't exist
+if (!file.exists("../data/raw/comp.rds")) {
+  print("Path `../data/raw/comp.rds` doesn't exist, file will be created in `../data/raw/`.")
+  write_rds(comp, "../data/raw/comp.rds")
 }
 ```
