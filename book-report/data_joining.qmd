@@ -23,9 +23,9 @@ As the 'comp' data is only complementary to 'main', a right join on main is sens
 
 ```{r}
 #| include: false
-dir = "/Users/robingirardin/school/inflation-developement/"
-main <- readRDS(paste0(dir, "data/raw/main.rds"))
-comp <- readRDS(paste0(dir, "data/raw/comp.rds"))
+root <- ".."  # go up one level to the repo root
+main <- readRDS(file.path(root, "data", "raw", "main.rds"))
+comp <- readRDS(file.path(root, "data", "raw", "comp.rds"))
 ```
 
 ```{r}
@@ -53,7 +53,7 @@ join <- left_join(main, comp, by=c("year", "country", "iso2c", "iso3c"))
 We used the historical classification dataset and then joined them with the already `join` data. As the original dataset format (XLSX) of the wealth classification was unsuited for conversion to CSV, we operated a small manual transformation procedure. A prior cleaning and transformation steps will unsure that both this and `join` dataset's format and compatible.
 
 ```{r}
-wealth <- read.csv(paste0(dir, "data/raw/country_wealth_labels.csv"))
+wealth <- read.csv(file.path(root, "data", "raw", "country_wealth_labels.csv"))
 
 knitr::kable(wealth[1:5, 1:5])
 ```
