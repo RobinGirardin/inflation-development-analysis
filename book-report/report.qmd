@@ -30,11 +30,13 @@ We were mandated by [World Bank Group](#https://www.worldbank.org/ext/en/home), 
 ```{r}
 library(DT)
 library(dplyr)
+library(tidyr)
 library(ggplot2)
 library(maps)
 library(sf)
 library(plotly)
 library(shiny)
+library(bslib)
 
 source("/Users/robingirardin/school/inflation-developement/script/utils.R")
 ```
@@ -103,14 +105,27 @@ In the graph below, you can observe the map representation of those missing valu
 Since our time granularity is year, this means that countries in red provide very few information at all. Additionnaly, even though european countries seems to contain less missing values than others countries, they are not exempt of them.
 
 ```{r}
-# Number of total missing value per country per year
+## Number of total missing value per country per year
 na_count <- join_labeled %>% 
-    group_by(country) %>% 
-    summarise(na_count = sum(across(everything(), ~ is.na(.))))
+    ## Transform in longer fromat for easier NaN's count computation
+    pivot_longer(
+        cols = inflation_pct:pop_growth_pct,
+        names_to = "indicator",
+        values_to = "indic_values") %>% 
+    group_by(country, indicator) %>% 
+    ## detect NA values per country, year and indicator
+    mutate(
+        is_na = is.na(indic_values),
+        na_count = sum(is_na))
+
+## Get world's countries coordinates
+map <- map_data("world") %>% 
+    ## Join countries coordinates with NaN's summary
+    ## Inner-join to rule out discrepancy between 'world' and 'is_na'
+    inner_join(., na_count, by=c("region"="country"), relationship = "many-to-many")
 ```
 
 ```{r}
-# Devise a plain minimalistic theme
 plain <- theme(
   axis.text = element_blank(),
   axis.line = element_blank(),
@@ -122,13 +137,9 @@ plain <- theme(
   plot.title = element_text(hjust = 0.5)
 )
 
-# Get world's countries coordinates
-map <- map_data("world") %>% 
-    # Join countries coordinates with NaN's summary
-    inner_join(., na_count, by=c("region"="country"))
-
-# Create a map of the world, filled by amount of NaN's per countries
+## Create a map of the world, filled by amount of NaN's per countries
 worldplot <- map %>% 
+    filter(indicator == "inflation_pct") %>% 
     ggplot(
         data = .,
         mapping = aes(x = long, y = lat)) +
@@ -136,7 +147,7 @@ worldplot <- map %>%
     geom_polygon(
         mapping = aes(fill = na_count, group = group)) +
     scale_fill_distiller(palette = "RdBu") +
-    ggtitle("Total missing value per country") +
+    ggtitle("Total missing value per country (inflation_pct)") +
     plain
 
 ggplotly(worldplot)
@@ -144,24 +155,60 @@ ggplotly(worldplot)
 
 ```{shinylive-r}
 #| standalone: true
+## Devise a plain minimalistic theme
+plain <- theme(
+  axis.text = element_blank(),
+  axis.line = element_blank(),
+  axis.ticks = element_blank(),
+  panel.border = element_blank(),
+  panel.grid = element_blank(),
+  axis.title = element_blank(),
+  panel.background = element_rect(fill = "white"),
+  plot.title = element_text(hjust = 0.5)
+)
 
-ui <- page_sidebar(
-    # Sidebar panels for inputs
-    sidebar <- sidebar(
-        select_list <- selectizeInput(
-            inputId = "indicator",
-            label = "Select your indicator",
-            choices = worldmap_selectizeInput_choices()
-        )
-    )
+ui <- page_fluid(
+    selectizeInput(
+        inputId = "indicator",
+        label = "Select your indicator",
+        choices = worldmap_selectizeInput_choices(),
+        selected = "debt_gdp_pct",
+        multiple = FALSE,
+    ),
     plotlyOutput(outputId = "worldmap")
 )
 
 server <- function(input, output, ...) {
     output$worldmap <- renderPlotly({
-        
+        ## Create a map of the world, filled by amount of NaN's per countries
+        plain <- theme(
+            axis.text = element_blank(),
+            axis.line = element_blank(),
+            axis.ticks = element_blank(),
+            panel.border = element_blank(),
+            panel.grid = element_blank(),
+            axis.title = element_blank(),
+            panel.background = element_rect(fill = "white"),
+            plot.title = element_text(hjust = 0.5))
+
+            ## Create a map of the world, filled by amount of NaN's per countries
+        worldplot <- map %>% 
+            filter(indicator == input$indicator) %>% 
+            ggplot(
+                data = .,
+                mapping = aes(x = long, y = lat)) +
+            coord_fixed(1.3) +
+            geom_polygon(
+                mapping = aes(fill = na_count, group = group)) +
+            scale_fill_distiller(palette = "RdBu") +
+            ggtitle("Total missing value per country (inflation_pct)") +
+            plain
+
+        ggplotly(worldplot)
     })
 }
+
+shinyApp(ui, server)
 ```
 
 # Source
