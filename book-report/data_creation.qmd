@@ -19,7 +19,7 @@ but also our own judgement.
 
 
 ```{r}
-# Indicators of the 'main' dataset, focused on economical factors
+## Indicators of the 'main' dataset, focused on economical factors
 indicators_main <- c(
   FP.CPI.TOTL.ZG = "inflation_pct", # Inflation, consumer prices (annual %)
   GC.DOD.TOTL.GD.ZS = "debt_gdp_pct", # General government gross debt (% of GDP)
@@ -35,8 +35,8 @@ indicators_main <- c(
   PA.NUS.PPP = "altas_conversion_factor" # Altas Conversion Factor
 )
 
-# indicators for the complementary dataset,
-# focused on education and tertiary informations
+## indicators for the complementary dataset,
+## focused on education and tertiary informations
 indicators_comp <- c(
   SP.URB.TOTL.IN.ZS = "urban_pop_pct", # Urban population (% of total)
   SP.DYN.LE00.IN = "life_expectancy", # Life expectancy at birth, total (years)
@@ -52,17 +52,17 @@ Load the previously mentioned indicator into separate datasets.
 
 ```{r}
 print("Extracting data from WorldBank API using wdi::WDI() function. Please wait.")
-# Load MAIN dataset
+## Load MAIN dataset
 main <- WDI(
   country = "all",
   indicator = names(indicators_main),
   start = 2000,
   end = 2024,
 )
-# Rename column names for clarity
+## Rename column names for clarity
 colnames(main) <- c("country", "iso2c", "iso3c", "year", indicators_main)
 print("Data extracted")
-# Write file in RDS format if he doesn't exist
+## Write file in RDS format if he doesn't exist
 if (!file.exists("data/raw/main.rds")) {
   print("Path `data/raw/main.rds` don't exist, file will be created in `data/raw/`.")
   write_rds(main, "data/raw/main.rds")
@@ -77,9 +77,9 @@ comp <- WDI(
   start = 2000,
   end = 2024,
 )
-# Rename column names for clarity
+## Rename column names for clarity
 colnames(comp) <- c("country", "iso2c", "iso3c", "year", indicators_comp)
-# Write file in RDS format if he doesn't exist
+## Write file in RDS format if he doesn't exist
 if (!file.exists("data/raw/comp.rds")) {
   print("Path `data/raw/comp.rds` don't exist, file will be created in `data/raw/`.")
   write_rds(comp, "data/raw/comp.rds")
