@@ -14,8 +14,6 @@ format:
     html: 
         toc: true
         toc-float: true
-filters:
-    - shinylive
 ---
 
 Inflation influences consumer purchasing power, economic growth, buisinesses developpement and competiteveness, central banks interests rates. As such, understand such an important factor of nowadays economy is crucial. Even more so considerinng the actual political and economical turbulence.
@@ -32,13 +30,7 @@ library(DT)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
-library(maps)
-library(sf)
 library(plotly)
-library(shiny)
-library(bslib)
-
-source("/Users/robingirardin/school/inflation-developement/script/utils.R")
 ```
 
 ```{r}
@@ -100,11 +92,12 @@ For more insights into the joining process, refer to [data_joining](data_joining
 As @tbl-panel shows, some indicators contain a lot of missing values. Handling missing values should be done with care, as it influences the quality of the overall dataset and thus the prediction. Indeed, in our case removing rows containing missing values could bias the analysis, as the proportion of missing values in country with lower income is different than in country with higher income. Additionnaly, removing entire column could prove detrimental to the overall analysis as we could inadvertently remove important informations. Thus, the removal strategy will depend in the analysis performed.
 
 In the graph below, you can observe the map representation of those missing values, across all countries and summed up over the years.
-[]
 
 Since our time granularity is year, this means that countries in red provide very few information at all. Additionnaly, even though european countries seems to contain less missing values than others countries, they are not exempt of them.
+Some indicators seems less present in poorer countries. However, other factors could influence the presence of missing values other the the poverty of the country. For example, strict and opaque political regime, such as China, are less likely to divulge truthful information, if any at all.
 
 ```{r}
+#| include: true
 ## Number of total missing value per country per year
 na_count <- join_labeled %>% 
     ## Transform in longer fromat for easier NaN's count computation
@@ -122,93 +115,37 @@ na_count <- join_labeled %>%
 map <- map_data("world") %>% 
     ## Join countries coordinates with NaN's summary
     ## Inner-join to rule out discrepancy between 'world' and 'is_na'
-    inner_join(., na_count, by=c("region"="country"), relationship = "many-to-many")
-```
-
-```{r}
-plain <- theme(
-  axis.text = element_blank(),
-  axis.line = element_blank(),
-  axis.ticks = element_blank(),
-  panel.border = element_blank(),
-  panel.grid = element_blank(),
-  axis.title = element_blank(),
-  panel.background = element_rect(fill = "white"),
-  plot.title = element_text(hjust = 0.5)
-)
+    inner_join(
+        .,
+        na_count %>% filter(indicator == "debt_gdp_pct"),
+        by=c("region"="country"),
+        relationship = "many-to-many")
 
 ## Create a map of the world, filled by amount of NaN's per countries
+plain <- theme(
+    axis.text = element_blank(),
+    axis.line = element_blank(),
+    axis.ticks = element_blank(),
+    panel.border = element_blank(),
+    panel.grid = element_blank(),
+    axis.title = element_blank(),
+    plot.title = element_text(hjust = 0.5),
+    plot.title.position = "plot",
+    panel.background = element_rect(fill = "white"))
+
+    ## Create a map of the world, filled by amount of NaN's per countries
 worldplot <- map %>% 
-    filter(indicator == "inflation_pct") %>% 
     ggplot(
         data = .,
         mapping = aes(x = long, y = lat)) +
     coord_fixed(1.3) +
     geom_polygon(
         mapping = aes(fill = na_count, group = group)) +
-    scale_fill_distiller(palette = "RdBu") +
-    ggtitle("Total missing value per country (inflation_pct)") +
+    scale_fill_distiller(palette = "RdBu", name = "NaN's Amount") +
+    ggtitle("Total missing value in Dept (% of GDP)") +
     plain
 
 ggplotly(worldplot)
-```
-
-```{shinylive-r}
-#| standalone: true
-## Devise a plain minimalistic theme
-plain <- theme(
-  axis.text = element_blank(),
-  axis.line = element_blank(),
-  axis.ticks = element_blank(),
-  panel.border = element_blank(),
-  panel.grid = element_blank(),
-  axis.title = element_blank(),
-  panel.background = element_rect(fill = "white"),
-  plot.title = element_text(hjust = 0.5)
-)
-
-ui <- page_fluid(
-    selectizeInput(
-        inputId = "indicator",
-        label = "Select your indicator",
-        choices = worldmap_selectizeInput_choices(),
-        selected = "debt_gdp_pct",
-        multiple = FALSE,
-    ),
-    plotlyOutput(outputId = "worldmap")
-)
-
-server <- function(input, output, ...) {
-    output$worldmap <- renderPlotly({
-        ## Create a map of the world, filled by amount of NaN's per countries
-        plain <- theme(
-            axis.text = element_blank(),
-            axis.line = element_blank(),
-            axis.ticks = element_blank(),
-            panel.border = element_blank(),
-            panel.grid = element_blank(),
-            axis.title = element_blank(),
-            panel.background = element_rect(fill = "white"),
-            plot.title = element_text(hjust = 0.5))
-
-            ## Create a map of the world, filled by amount of NaN's per countries
-        worldplot <- map %>% 
-            filter(indicator == input$indicator) %>% 
-            ggplot(
-                data = .,
-                mapping = aes(x = long, y = lat)) +
-            coord_fixed(1.3) +
-            geom_polygon(
-                mapping = aes(fill = na_count, group = group)) +
-            scale_fill_distiller(palette = "RdBu") +
-            ggtitle("Total missing value per country (inflation_pct)") +
-            plain
-
-        ggplotly(worldplot)
-    })
-}
-
-shinyApp(ui, server)
 ```
 
 # Source
