@@ -51,7 +51,9 @@ indicators_comp <- c(
 Load the previously mentioned indicator into separate datasets.
 
 ```{r}
-print("Extracting data from WorldBank API using wdi::WDI() function. Please wait.")
+print(
+  "Extracting data from WorldBank API using wdi::WDI() function. Please wait."
+)
 ## Load MAIN dataset
 main <- WDI(
   country = "all",
@@ -64,12 +66,16 @@ colnames(main) <- c("country", "iso2c", "iso3c", "year", indicators_main)
 print("Data extracted")
 ## Write file in RDS format if he doesn't exist
 if (!file.exists("data/raw/main.rds")) {
-  print("Path `data/raw/main.rds` don't exist, file will be created in `data/raw/`.")
+  print(
+    "Path `data/raw/main.rds` don't exist, file will be created in `data/raw/`."
+  )
   write_rds(main, "data/raw/main.rds")
 }
 
 
-print("Extracting data from WorldBank API using wdi::WDI() function. Please wait.")
+print(
+  "Extracting data from WorldBank API using wdi::WDI() function. Please wait."
+)
 # Load COMPLEMENTARY dataset
 comp <- WDI(
   country = "all",
@@ -81,7 +87,9 @@ comp <- WDI(
 colnames(comp) <- c("country", "iso2c", "iso3c", "year", indicators_comp)
 ## Write file in RDS format if he doesn't exist
 if (!file.exists("data/raw/comp.rds")) {
-  print("Path `data/raw/comp.rds` don't exist, file will be created in `data/raw/`.")
+  print(
+    "Path `data/raw/comp.rds` don't exist, file will be created in `data/raw/`."
+  )
   write_rds(comp, "data/raw/comp.rds")
 }
 ```
