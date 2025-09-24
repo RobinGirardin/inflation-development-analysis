@@ -10,6 +10,7 @@ execute:
     include: false
     message: false
     warning: false
+    cache: true
 format: 
     html: 
         toc: true
@@ -31,6 +32,7 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(plotly)
+library(patchwork)
 ```
 
 ```{r}
@@ -99,7 +101,7 @@ Some indicators seems less present in poorer countries. However, other factors c
 ```{r}
 #| include: true
 ## Number of total missing value per country per year
-na_count <- join_labeled %>% 
+na_count <- join_labeled %>%
     ## Transform in longer fromat for easier NaN's count computation
     pivot_longer(
         cols = inflation_pct:pop_growth_pct,
@@ -147,6 +149,56 @@ worldplot <- map %>%
 
 ggplotly(worldplot)
 ```
+
+# Exploration
+
+Our main point of focus is the inflation rate. Thus, let's plot this for all available countries first. Luckily, this variable hardly contain any missing values at all (`{r} round(sum(is.na(join_labeled$inflation_pct)) / length(join_labeled$inflation_pct), digits = 3)` - `{r} sum(is.na(join_labeled$inflation_pct))`). Hence, we can just leave them aside for now.
+
+The plot fit a linear and non-linear model on the data and each plot zoom further. Overall, the inflation rate is low and stable. Ultimately, we don't see much of information here, due to the high density of points towards lower values and other highly extreme values. We mitigate this effect by applying a logaritmic transformation on the data.
+
+```{r}
+#| include: true
+p1 <- ggplot(
+    data = join_labeled,
+    mapping = aes(x = year, y = inflation_pct)) +
+        geom_point(color = "#2b8cbe", alpha = 0.3) +
+        geom_smooth(color = "black", method="lm") +
+        geom_smooth(color = "blue", method = "gam") +
+        labs(x = "Year", y = "Inflation (%)") +
+        theme_minimal()
+
+p2 <- ggplot(
+    data = join_labeled,
+    mapping = aes(x = year, y = log(inflation_pct))) +
+        geom_point(color = "#2b8cbe", alpha = 0.3) +
+        geom_smooth(color = "black", method="lm") +
+        geom_smooth(color = "blue", method = "gam") +
+        labs(x = "Year", y = "Ln(Inflation) (%)") +
+        theme_minimal()
+
+p3 <- ggplot(
+    data = join_labeled,
+    mapping = aes(x = inflation_pct)) +
+        geom_density(fill = "#2b8cbe", color = "#2b8cbe", alpha = 0.3) +
+        labs(x = "Inflation (%)", y = "Density)") +
+        theme_minimal()
+
+p4 <- ggplot(
+    data = join_labeled,
+    mapping = aes(x = log(inflation_pct))) +
+        geom_density(fill = "#2b8cbe", color = "#2b8cbe", alpha = 0.3) +
+        labs(x = "Ln(Inflation) (%)", y = "Density") +
+        theme_minimal()
+
+(p1 + p2) / (p3 + p4) + plot_annotation(title = "Inflation and log-transformed inflation distribution")
+```
+
+```{r}
+dataplot_wealthclass_inflation
+```
+
+# Disclamer on GenAI
+
 
 # Source
 
