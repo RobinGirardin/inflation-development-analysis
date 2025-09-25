@@ -99,6 +99,7 @@ In the graph below, you can observe the map representation of those missing valu
 Since our time granularity is year, this means that countries in red provide very few information at all. Additionnaly, even though european countries seems to contain less missing values than others countries, they are not exempt of them.
 Some indicators seems less present in poorer countries. However, other factors could influence the presence of missing values other the the poverty of the country. For example, strict and opaque political regime, such as China, are less likely to divulge truthful information, if any at all.
 
+
 ```{r}
 #| include: true
 ## Number of total missing value per country per year
@@ -112,7 +113,10 @@ na_count <- join_labeled %>%
     ## detect NA values per country, year and indicator
     mutate(
         is_na = is.na(indic_values),
-        na_count = sum(is_na))
+        na_count = sum(is_na),
+        country = as.factor(country),
+        country = recode(country, "United States" = "USA", "Russian Federation" = "Russia")) ## Renaming for consistency
+
 
 ## Get world's countries coordinates
 map <- map_data("world") %>% 
@@ -136,7 +140,7 @@ plain <- theme(
     plot.title.position = "plot",
     panel.background = element_rect(fill = "white"))
 
-    ## Create a map of the world, filled by amount of NaN's per countries
+## Create a map of the world, filled by amount of NaN's per countries
 worldplot <- map %>% 
     ggplot(
         data = .,
@@ -146,6 +150,7 @@ worldplot <- map %>%
         mapping = aes(fill = na_count, group = group)) +
     scale_fill_distiller(palette = "RdBu", name = "NaN's Amount") +
     ggtitle("Total missing value in Dept (% of GDP)") +
+    labs(caption = "Remark, divergence between country name might create blank values") +
     plain
 
 ggplotly(worldplot)
@@ -365,7 +370,7 @@ ww_density_gamma <- ggplot(
     geom_density(
         mapping = aes(x = gamma, color = "Gamma"), 
         size = 0.75) +
-    ggtitle("Goodness of fit") + 
+    ggtitle("Goodness of fit with gamma distribution") + 
     scale_color_manual(values = c("Inflation" = "#addd8e", "Gamma" = "#2c7fb8")) +
     labs(x = "Inflation (%)", y = "Density", color = "Distribution") +
     theme_minimal()
@@ -431,7 +436,6 @@ In order to statistically confirm whether this assumption is right or wrong, we'
 
 ```{r}
 #| include: true
-
 join_labeled %>% 
     select(wealth_class, inflation_pct, year) %>% 
     drop_na() %>% 
@@ -505,9 +509,16 @@ print(
         " magnitude"))
 ```
 
+# Predicting inflation rate
 
-# Disclamer on GenAI
+# Conclusion
 
+# GenerativeAI
+
+Generative AI is a common and powerful tool. However, hallucination and illusion of competency prompte the user to use it with care.
+In this project, we used ChatGPT at the earlier stage of the project to brainstorm ideas. In the later stage of the project, it was also used to check for the availability of R function for needed purposes and help us in overcoming bottleneck when programming.
+
+Although a powerful tool, it shouldn't come at the cost of learning. Hence, a special emphasis was set in our group to avoid using it as much as possible. Whenever used, we tried to use in a way that it didn't digest and process the information in our place. Whether be it for declarative knowledge such statistical model and their assumption, economical theory or for procedural knowledge such as programming. Our goal was to left the thinking to us. N
 
 # Source
 
