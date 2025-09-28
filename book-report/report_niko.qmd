@@ -99,6 +99,7 @@ Data overview
 
 For more insights into the joining process, refer to [data_joining](data_joining.qmd).
 
+
 ## Missing Values
 
 As @tbl-panel shows, some indicators contain a lot of missing values. Handling missing values should be done with care, as it influences the quality of the overall dataset and thus the prediction. Indeed, in our case removing rows containing missing values could bias the analysis, as the proportion of missing values in country with lower income is different than in country with higher income. Additionnaly, removing entire column could prove detrimental to the overall analysis as we could inadvertently remove important informations. Thus, the removal strategy will depend in the analysis performed.
@@ -778,7 +779,32 @@ Secondly, a 1% percent increase in the amount of enrollement in secondary educat
 
 Thirdly, a 1% percent increase in the bank liquid reserve would decrease the inflation rate by 0.299%.
 
-# Conclusion
+## Conclusion
+
+### Executive Takeaway
+
+Richer countries enjoy lower and steadier inflation, while poorer countries face higher and more unpredictable price changes. Global crises hit wealthy nations harder, while everyday essentials in low-income economies are shaped by local weaknesses. Education, reserves, and monetary discipline emerge as key tools to keep inflation under control.
+
+### Key Insights
+
+The analysis of 210 countries between 2000 and 2014 shows that **income level is the single strongest predictor of inflation behavior**. For example, high-income countries averaged about 2–3 percent inflation with only small swings, similar to how prices in Switzerland change gently over time. In contrast, low-income countries often faced double-digit inflation, with sudden jumps that made everyday planning impossible. Imagine walking to the market one week with enough money for bread and milk, and the next week finding you can only afford bread — this illustrates the instability observed in poorer economies.
+
+**Global crises affect income groups differently.** Wealthy economies showed sharp cycles during the 2008 financial crisis and again in 2020 with COVID-19: inflation spiked, then dropped as central banks reacted. For poorer economies, these global events barely moved the needle. Instead, their inflation reflected local realities such as political instability or weak monetary systems. Think of it as two boats: a large ship rocking with every ocean wave (a rich, globally connected economy) versus a small raft drifting in a quiet bay (a poorer, more isolated economy). Both face risks, but for different reasons.
+
+**Structural factors explain these differences.**
+
+* *Broad money growth* — A 1% increase in broad money raised inflation by nearly 1%. This is like pumping more air into a balloon: eventually, it stretches too far and bursts.
+* *Education* — Countries with higher enrollment in secondary schools had lower inflation. More education means a stronger workforce, better institutions, and smarter economic management.
+* *Foreign reserves* — Reserves act like a savings account. Countries with larger reserves weather shocks better, since they can defend their currency and imports during crises.
+
+### Policy Implications
+
+High-income countries enjoy relative stability but remain exposed to global shocks. Low-income countries struggle with local structural issues but can make progress through targeted reforms. Building up reserves, investing in education, and controlling excessive monetary expansion are practical, proven steps. For instance, countries like South Korea and Singapore transformed themselves from middle-income to advanced economies partly by prioritizing education and financial prudence — reforms that directly supported stable prices.
+
+### Final Note
+
+Inflation is not just about charts and statistics. It affects whether families can afford the same groceries next week, whether businesses can plan investments, and whether governments can respond to crises without losing control. Stability is achievable when countries combine sound policies with long-term structural investments. For the World Bank and policymakers, the message is straightforward: focus not only on fighting inflation today but on building the systems that keep it stable tomorrow.
+
 
 # GenerativeAI
 
