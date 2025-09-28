@@ -23,9 +23,9 @@ As the 'comp' data is only complementary to 'main', a right join on main is sens
 
 ```{r}
 #| include: false
-root <- ".."  # go up one level to the repo root
-main <- readRDS(file.path(root, "data", "raw", "main.rds"))
-comp <- readRDS(file.path(root, "data", "raw", "comp.rds"))
+dir <- "/Users/robingirardin/school/inflation-developement/"
+main <- readRDS(paste0(dir, "data/raw/main.rds"))
+comp <- readRDS(paste0(dir, "data/raw/comp.rds"))
 ```
 
 ```{r}
@@ -33,19 +33,41 @@ print(paste0("Length of the 'year' column in `main`: ", length(main$year)))
 print(paste0("Length of the 'year' column in `comp`: ", length(comp$year)))
 
 print(
-  paste0("'year' in main ranges from ", min(main$year), "to ", max(main$year)))
-print(paste0("'year' in main ranges from ", min(comp$year), "to ", max(comp$year)))
+  paste0("'year' in main ranges from ", min(main$year), "to ", max(main$year))
+)
+print(
+  paste0("'year' in main ranges from ", min(comp$year), "to ", max(comp$year))
+)
 ```
 
 ```{r}
-print(paste0("Amount of recorded unique countries in `main`: ", length(unique(main$country)), " for ", length(main$country), " total observations"))
-print(paste0("Amount of recorded unique countries in `comp`: ", length(unique(comp$country)), " for ", length(comp$country), " total observations"))
+print(
+  paste0(
+         "Amount of recorded unique countries in `main`: ",
+         length(unique(main$country)),
+         " for ",
+         length(main$country),
+         " total observations")
+)
+print(
+  paste0(
+         "Amount of recorded unique countries in `comp`: ",
+         length(unique(comp$country)),
+         " for ",
+         length(comp$country),
+         " total observations")
+)
 
-print(paste0("Is Switzerland named 'Switzerland' (EN)? ", ("Switzerland" %in% unique(main$country)) & ("Switzerland" %in% unique(comp$country))))
+print(
+  paste0(
+         "Is Switzerland named 'Switzerland' (EN)? ",
+         ("Switzerland" %in% unique(main$country)) &
+           ("Switzerland" %in% unique(comp$country)))
+)
 ```
 
 ```{r}
-join <- left_join(main, comp, by=c("year", "country", "iso2c", "iso3c"))
+join <- left_join(main, comp, by = c("year", "country", "iso2c", "iso3c"))
 ```
 
 # Wealth classification
@@ -53,7 +75,7 @@ join <- left_join(main, comp, by=c("year", "country", "iso2c", "iso3c"))
 We used the historical classification dataset and then joined them with the already `join` data. As the original dataset format (XLSX) of the wealth classification was unsuited for conversion to CSV, we operated a small manual transformation procedure. A prior cleaning and transformation steps will unsure that both this and `join` dataset's format and compatible.
 
 ```{r}
-wealth <- read.csv(file.path(root, "data", "raw", "country_wealth_labels.csv"))
+wealth <- read.csv(paste0(dir, "data/raw/country_wealth_labels.csv"))
 
 knitr::kable(wealth[1:5, 1:5])
 ```
@@ -67,26 +89,27 @@ Then each year will be stripped of their 'X' character and transformed into inte
 ```{r}
 
 ## Cleaning pipeline for the wealth classification dataset
-long_wealth <- wealth %>% 
+long_wealth <- wealth %>%
 
-    ## Renaming variables 
-    rename("iso3c" = X) %>% 
-    rename_with(.fn = ~ gsub("X", "", .x)) %>% 
+  ## Renaming variables
+  rename("iso3c" = X) %>%
+  rename_with(.fn = ~ gsub("X", "", .x)) %>%
 
-    ## Aggregate all variables symbolising a year date into a single variable called `year`
-    ## and each a wealth class for each year under a `wealth_class` class.
-    pivot_longer(
-        cols = colnames(.)[!(grepl("country|iso3c", colnames(.)))],
-        names_to = "year",
-        values_to = "wealth_class") %>% 
+  ## Aggregate all variables symbolising a year date
+  ## into a single variable called `year`
+  ## and each a wealth class for each year under a `wealth_class` class.
+  pivot_longer(
+               cols = colnames(.)[!(grepl("country|iso3c", colnames(.)))],
+               names_to = "year",
+               values_to = "wealth_class") %>%
 
-    ## Make sure that each date under `year` is numeric and not a string.
-    mutate(year = as.numeric(year)) %>% 
+  ## Make sure that each date under `year` is numeric and not a string.
+  mutate(year = as.numeric(year)) %>%
 
-    ## Take care of different labels used for missing values.
-    mutate(
-        wealth_class = sub("[.]{2}", "", wealth_class),
-        wealth_class = na_if(wealth_class, ""))
+  ## Take care of different labels used for missing values.
+  mutate(
+         wealth_class = sub("[.]{2}", "", wealth_class),
+         wealth_class = na_if(wealth_class, ""))
 
 
 knitr::kable(long_wealth[1:5, 1:4])
@@ -97,25 +120,30 @@ Finally, we'll join both this dataset with the main dataset, `join`. However, th
 **Remark:** Additionnal meta information about the `wealth_class` can be found inside `data/raw/country_wealth_labels_meta.csv`.
 
 ```{r}
-print(paste0("Countries amount difference between `join` and wealth classification dataset: ", length(unique(join$country)) - length(unique(long_wealth$country))))
+print(
+  paste0(
+    "Countries amount difference between `join` and wealth classification dataset: ",
+    length(unique(join$country)) - length(unique(long_wealth$country)))
+)
 ```
 
 ```{r}
 #| include: false
-long_wealth %>% 
-    select(country, iso3c) %>% 
-    unique() %>% 
-    arrange(country) %>% 
-    print(n = Inf)
+long_wealth %>%
+  select(country, iso3c) %>%
+  unique() %>%
+  arrange(country) %>%
+  print(n = Inf)
 
-join %>% 
-    select(country, iso3c) %>% 
-    unique() %>% 
-    arrange(country) %>% 
-    print()
+join %>%
+  select(country, iso3c) %>%
+  unique() %>%
+  arrange(country) %>%
+  print()
 
 ```
 
 ```{r}
-join_labeled <- inner_join(join, long_wealth, by=c("country", "iso3c", "year"))
+join_labeled <-
+  inner_join(join, long_wealth, by = c("country", "iso3c", "year"))
 ```
