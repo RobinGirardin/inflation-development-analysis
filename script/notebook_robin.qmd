@@ -40,9 +40,10 @@ library(rstatix)
 library(ggbeeswarm)
 library(RColorBrewer)
 library(geepack)
-library(RESI)
+#library(RESI)
 library(fixest)
-library(etable)
+#library(etable)
+library(tibble)
 ```
 
 # Preprocessing
@@ -59,9 +60,12 @@ As the 'comp' data is only complementary to 'main', a right join on main is sens
 
 ```{r}
 #| include: false
-dir = "/Users/robingirardin/school/inflation-developement/"
-main <- readRDS(paste0(dir, "data/raw/main.rds"))
-comp <- readRDS(paste0(dir, "data/raw/comp.rds"))
+library(readr); library(dplyr); library(tidyr)
+
+root <- ".."  # go up from script/ to the repo root
+
+main   <- readRDS(file.path(root, "data", "raw", "main.rds"))
+comp   <- readRDS(file.path(root, "data", "raw", "comp.rds"))
 ```
 
 ```{r}
@@ -113,7 +117,7 @@ Finally, we'll join both this dataset with the main dataset, `join`. However, th
 
 ```{r}
 #| include: true
-wealth <- read.csv(paste0(dir, "data/raw/country_wealth_labels.csv"))
+wealth <- read.csv(file.path(root, "data", "raw", "country_wealth_labels.csv"))
 
 knitr::kable(wealth[1:5, 1:5])
 ```
@@ -368,7 +372,7 @@ join_labeled %>%
             geom_smooth(color = "#fc9272") +
             ggtitle("Inflation for wealthy countries") +
             coord_cartesian(xlim = NULL, ylim = c(0, 20)) +
-            labs("Year", "Inflation (%)") +
+            labs(x = "Year", y = "Inflation (%)") +
             theme_minimal()
 
 ```
@@ -712,7 +716,7 @@ geeglm <- geeglm(
     )
 
 summary(geeglm)
-print(resi(geeglm))
+print(head(residuals(geeglm, type = "pearson")))
 ```
 
 ```{r}

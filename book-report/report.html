@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Girardin Robin">
-<meta name="author" content="Geogantopoulos Nikolaos">
+<meta name="author" content="Georgantopoulos Nikolaos">
 
 <title>Inflation Developement</title>
 <style>
@@ -41,12 +41,12 @@ ul.task-list li input[type="checkbox"] {
 <script src="report_files/libs/plotly-binding-4.11.0/plotly.js"></script>
 <script src="report_files/libs/typedarray-0.1/typedarray.min.js"></script>
 <script src="report_files/libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
-<link href="report_files/libs/crosstalk-1.2.1/css/crosstalk.min.css" rel="stylesheet">
-<script src="report_files/libs/crosstalk-1.2.1/js/crosstalk.min.js"></script>
+<link href="report_files/libs/crosstalk-1.2.2/css/crosstalk.min.css" rel="stylesheet">
+<script src="report_files/libs/crosstalk-1.2.2/js/crosstalk.min.js"></script>
 <link href="report_files/libs/plotly-htmlwidgets-css-2.11.1/plotly-htmlwidgets.css" rel="stylesheet">
 <script src="report_files/libs/plotly-main-2.11.1/plotly-latest.min.js"></script>
 <link href="report_files/libs/datatables-css-0.0.0/datatables-crosstalk.css" rel="stylesheet">
-<script src="report_files/libs/datatables-binding-0.33/datatables.js"></script>
+<script src="report_files/libs/datatables-binding-0.34.0/datatables.js"></script>
 <link href="report_files/libs/dt-core-1.13.6/css/jquery.dataTables.min.css" rel="stylesheet">
 <link href="report_files/libs/dt-core-1.13.6/css/jquery.dataTables.extra.css" rel="stylesheet">
 <script src="report_files/libs/dt-core-1.13.6/js/jquery.dataTables.min.js"></script>
@@ -66,6 +66,7 @@ ul.task-list li input[type="checkbox"] {
   <ul class="collapse">
   <li><a href="#missing-values" id="toc-missing-values" class="nav-link" data-scroll-target="#missing-values">Missing Values</a></li>
   </ul></li>
+  <li><a href="#shinylive-r-standalone-true-ui---page_sidebar-sidebar-panels-for-inputs-sidebar---sidebar-select_list---selectizeinput-inputid-indicator-label-select-your-indicator-choices-worldmap_selectizeinput_choices-plotlyoutputoutputid-worldmap-server---functioninput-output-...-outputworldmap---renderplotly" id="toc-shinylive-r-standalone-true-ui---page_sidebar-sidebar-panels-for-inputs-sidebar---sidebar-select_list---selectizeinput-inputid-indicator-label-select-your-indicator-choices-worldmap_selectizeinput_choices-plotlyoutputoutputid-worldmap-server---functioninput-output-...-outputworldmap---renderplotly" class="nav-link" data-scroll-target="#shinylive-r-standalone-true-ui---page_sidebar-sidebar-panels-for-inputs-sidebar---sidebar-select_list---selectizeinput-inputid-indicator-label-select-your-indicator-choices-worldmap_selectizeinput_choices-plotlyoutputoutputid-worldmap-server---functioninput-output-...-outputworldmap---renderplotly"><code>{shinylive-r} # #| standalone: true #  # ui &lt;- page_sidebar( #     # Sidebar panels for inputs #     sidebar &lt;- sidebar( #         select_list &lt;- selectizeInput( #             inputId = "indicator", #             label = "Select your indicator", #             choices = worldmap_selectizeInput_choices() #         ) #     ) #     plotlyOutput(outputId = "worldmap") # ) #  # server &lt;- function(input, output, ...) { #     output$worldmap &lt;- renderPlotly({ #          #     }) # } #</code></a></li>
   <li><a href="#source" id="toc-source" class="nav-link" data-scroll-target="#source">Source</a></li>
   <li><a href="#appendix" id="toc-appendix" class="nav-link" data-scroll-target="#appendix">Appendix</a>
   <ul class="collapse">
@@ -97,7 +98,7 @@ ul.task-list li input[type="checkbox"] {
           </p>
       </div>
     <div class="quarto-title-meta-contents">
-    <p class="author">Geogantopoulos Nikolaos </p>
+    <p class="author">Georgantopoulos Nikolaos </p>
   </div>
   <div class="quarto-title-meta-contents">
       </div>
@@ -314,6 +315,9 @@ Table&nbsp;2: Data overview
 <p>Since our time granularity is year, this means that countries in red provide very few information at all. Additionnaly, even though european countries seems to contain less missing values than others countries, they are not exempt of them.</p>
 </section>
 </section>
+<section id="shinylive-r-standalone-true-ui---page_sidebar-sidebar-panels-for-inputs-sidebar---sidebar-select_list---selectizeinput-inputid-indicator-label-select-your-indicator-choices-worldmap_selectizeinput_choices-plotlyoutputoutputid-worldmap-server---functioninput-output-...-outputworldmap---renderplotly" class="level1">
+<h1><code>{shinylive-r} # #| standalone: true #  # ui &lt;- page_sidebar( #     # Sidebar panels for inputs #     sidebar &lt;- sidebar( #         select_list &lt;- selectizeInput( #             inputId = "indicator", #             label = "Select your indicator", #             choices = worldmap_selectizeInput_choices() #         ) #     ) #     plotlyOutput(outputId = "worldmap") # ) #  # server &lt;- function(input, output, ...) { #     output$worldmap &lt;- renderPlotly({ #          #     }) # } #</code></h1>
+</section>
 <section id="source" class="level1">
 <h1>Source</h1>
 <p>Indicator dataset:</p>
@@ -369,8 +373,8 @@ Table&nbsp;2: Data overview
 </ul>
 <div class="cell">
 <div class="cell-output-display">
-<div class="datatables html-widget html-fill-item" id="htmlwidget-90f237a429baa6a9bbbd" style="width:100%;height:auto;"></div>
-<script type="application/json" data-for="htmlwidget-90f237a429baa6a9bbbd">{"x":{"filter":"none","vertical":false,"data":[["1","2","3","4"],["L","LM","UM","H"],["&lt;= 755","756-2,995","2,996-9,265","&gt; 9,265"],["&lt;= 745","746-2,975","2,976-9,205","&gt; 9,205"],["&lt;= 735","736-2,935","2,936-9,075","&gt; 9,075"],["&lt;= 765","766-3,035","3,036-9,385","&gt; 9,385"],["&lt;= 825","826-3,255","3,256-10,065","&gt; 10,065"],["&lt;= 875","876-3,465","3,466-10,725","&gt; 10,725"],["&lt;= 905","906-3,595","3,596-11,115","&gt; 11,115"],["&lt;= 935","936-3,705","3,706-11,455","&gt; 11,455"],["&lt;= 975","976-3,855","3,856-11,905","&gt; 11,905"],["&lt;= 995","996-3,945","3,946-12,195","&gt; 12,195"],["&lt;= 1,005","1,006-3,975","3,976-12,275","&gt; 12,275"],["&lt;= 1,025","1,026-4,035","4,036-12,475","&gt; 12,475"],["&lt;= 1,035","1,036-4,085","4,086-12,615","&gt; 12,615"],["&lt;= 1,045","1,046-4,125","4,126-12,745","&gt; 12,745"],["&lt;= 1,045","1,046-4,125","4,126-12,735","&gt; 12,735"],["&lt;= 1,025","1,026-4,035","4,036-12,475","&gt; 12,475"],["&lt;= 1,005","1,006-3,955","3,956-12,235","&gt; 12,235"],["&lt;= 995","996-3,895","3,896-12,055","&gt; 12,055"],["&lt;= 1,025","1,026-3,995","3,996-12,375","&gt; 12,375"],["&lt;= 1,035","1,036 - 4,045","4,046 - 12,535","&gt; 12,535"],["&lt;= 1,045","1,046 - 4,095","4,096 - 12,695","&gt; 12,695"],["&lt;= 1,085","1,086 - 4,255","4,256 - 13,205","&gt; 13,205"],["&lt;= 1,135","1,136 - 4,465","4,466 - 13,845","&gt; 13,845"],["&lt;= 1,145","1,146 - 4,515","4,516 - 14,005","&gt; 14,005"],["&lt;= 1,135","1,136 - 4,495","4,496 - 13,935","&gt; 13,935"]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>labels<\/th>\n      <th>2000<\/th>\n      <th>2001<\/th>\n      <th>2002<\/th>\n      <th>2003<\/th>\n      <th>2004<\/th>\n      <th>2005<\/th>\n      <th>2006<\/th>\n      <th>2007<\/th>\n      <th>2008<\/th>\n      <th>2009<\/th>\n      <th>2010<\/th>\n      <th>2011<\/th>\n      <th>2012<\/th>\n      <th>2013<\/th>\n      <th>2014<\/th>\n      <th>2015<\/th>\n      <th>2016<\/th>\n      <th>2017<\/th>\n      <th>2018<\/th>\n      <th>2019<\/th>\n      <th>2020<\/th>\n      <th>2021<\/th>\n      <th>2022<\/th>\n      <th>2023<\/th>\n      <th>2024<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"dom":"t","columnDefs":[{"orderable":false,"targets":0},{"name":" ","targets":0},{"name":"labels","targets":1},{"name":"2000","targets":2},{"name":"2001","targets":3},{"name":"2002","targets":4},{"name":"2003","targets":5},{"name":"2004","targets":6},{"name":"2005","targets":7},{"name":"2006","targets":8},{"name":"2007","targets":9},{"name":"2008","targets":10},{"name":"2009","targets":11},{"name":"2010","targets":12},{"name":"2011","targets":13},{"name":"2012","targets":14},{"name":"2013","targets":15},{"name":"2014","targets":16},{"name":"2015","targets":17},{"name":"2016","targets":18},{"name":"2017","targets":19},{"name":"2018","targets":20},{"name":"2019","targets":21},{"name":"2020","targets":22},{"name":"2021","targets":23},{"name":"2022","targets":24},{"name":"2023","targets":25},{"name":"2024","targets":26}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script>
+<div class="datatables html-widget html-fill-item" id="htmlwidget-b7969be7de3600f69c2f" style="width:100%;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-b7969be7de3600f69c2f">{"x":{"filter":"none","vertical":false,"data":[["1","2","3","4"],["L","LM","UM","H"],["&lt;= 755","756-2,995","2,996-9,265","&gt; 9,265"],["&lt;= 745","746-2,975","2,976-9,205","&gt; 9,205"],["&lt;= 735","736-2,935","2,936-9,075","&gt; 9,075"],["&lt;= 765","766-3,035","3,036-9,385","&gt; 9,385"],["&lt;= 825","826-3,255","3,256-10,065","&gt; 10,065"],["&lt;= 875","876-3,465","3,466-10,725","&gt; 10,725"],["&lt;= 905","906-3,595","3,596-11,115","&gt; 11,115"],["&lt;= 935","936-3,705","3,706-11,455","&gt; 11,455"],["&lt;= 975","976-3,855","3,856-11,905","&gt; 11,905"],["&lt;= 995","996-3,945","3,946-12,195","&gt; 12,195"],["&lt;= 1,005","1,006-3,975","3,976-12,275","&gt; 12,275"],["&lt;= 1,025","1,026-4,035","4,036-12,475","&gt; 12,475"],["&lt;= 1,035","1,036-4,085","4,086-12,615","&gt; 12,615"],["&lt;= 1,045","1,046-4,125","4,126-12,745","&gt; 12,745"],["&lt;= 1,045","1,046-4,125","4,126-12,735","&gt; 12,735"],["&lt;= 1,025","1,026-4,035","4,036-12,475","&gt; 12,475"],["&lt;= 1,005","1,006-3,955","3,956-12,235","&gt; 12,235"],["&lt;= 995","996-3,895","3,896-12,055","&gt; 12,055"],["&lt;= 1,025","1,026-3,995","3,996-12,375","&gt; 12,375"],["&lt;= 1,035","1,036 - 4,045","4,046 - 12,535","&gt; 12,535"],["&lt;= 1,045","1,046 - 4,095","4,096 - 12,695","&gt; 12,695"],["&lt;= 1,085","1,086 - 4,255","4,256 - 13,205","&gt; 13,205"],["&lt;= 1,135","1,136 - 4,465","4,466 - 13,845","&gt; 13,845"],["&lt;= 1,145","1,146 - 4,515","4,516 - 14,005","&gt; 14,005"],["&lt;= 1,135","1,136 - 4,495","4,496 - 13,935","&gt; 13,935"]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>labels<\/th>\n      <th>2000<\/th>\n      <th>2001<\/th>\n      <th>2002<\/th>\n      <th>2003<\/th>\n      <th>2004<\/th>\n      <th>2005<\/th>\n      <th>2006<\/th>\n      <th>2007<\/th>\n      <th>2008<\/th>\n      <th>2009<\/th>\n      <th>2010<\/th>\n      <th>2011<\/th>\n      <th>2012<\/th>\n      <th>2013<\/th>\n      <th>2014<\/th>\n      <th>2015<\/th>\n      <th>2016<\/th>\n      <th>2017<\/th>\n      <th>2018<\/th>\n      <th>2019<\/th>\n      <th>2020<\/th>\n      <th>2021<\/th>\n      <th>2022<\/th>\n      <th>2023<\/th>\n      <th>2024<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"dom":"t","columnDefs":[{"orderable":false,"targets":0},{"name":" ","targets":0},{"name":"labels","targets":1},{"name":"2000","targets":2},{"name":"2001","targets":3},{"name":"2002","targets":4},{"name":"2003","targets":5},{"name":"2004","targets":6},{"name":"2005","targets":7},{"name":"2006","targets":8},{"name":"2007","targets":9},{"name":"2008","targets":10},{"name":"2009","targets":11},{"name":"2010","targets":12},{"name":"2011","targets":13},{"name":"2012","targets":14},{"name":"2013","targets":15},{"name":"2014","targets":16},{"name":"2015","targets":17},{"name":"2016","targets":18},{"name":"2017","targets":19},{"name":"2018","targets":20},{"name":"2019","targets":21},{"name":"2020","targets":22},{"name":"2021","targets":23},{"name":"2022","targets":24},{"name":"2023","targets":25},{"name":"2024","targets":26}],"order":[],"autoWidth":false,"orderClasses":false},"selection":{"mode":"multiple","selected":null,"target":"row","selectable":null}},"evals":[],"jsHooks":[]}</script>
 </div>
 </div>
 </section>
