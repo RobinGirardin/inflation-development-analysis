@@ -1,0 +1,873 @@
+---
+title: "Inflation Developement"
+subtitle: "An exploration of patterns and predictors"
+author:
+    - name: Girardin Robin
+    - name: Georgantopoulos Nikolaos
+institute: "G & G Data Science Cabinet"
+execute: 
+    echo: false
+    include: false
+    message: false
+    warning: false
+    cache: true
+format: 
+    html: 
+        toc: true
+        toc-float: true
+---
+
+Inflation influences consumer purchasing power, economic growth, buisinesses developpement and competiteveness, central banks interests rates. As such, understand such an important factor of nowadays economy is crucial. Even more so considerinng the actual political and economical turbulence.
+
+We were mandated by [World Bank Group](#https://www.worldbank.org/ext/en/home), Departement of Developement Economics, to explore data at their disposal and determine inflation developement patterns and predictors. More specifically, this report targets the following questions: 
+
+- How is inflation distributed?
+- How does inflation develops from 2000 until todays?
+- How does crisis influence inflation markers?
+- Which indicators could be used to predict inflation rates?
+
+```{r}
+library(DT)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(plotly)
+library(patchwork)
+library(rstatix)
+library(GGally)
+library(ggcorrplot)
+library(fixest)
+library(here)
+```
+
+```{r}
+# Data used in most plots (has life_expectancy, fertility_rate, etc.)
+join_labeled <- readRDS(here("data", "processed", "join_labeled.rds"))
+
+# Data used later in the FE models
+join_clean   <- readRDS(here("data", "final", "join_clean.rds"))
+
+```
+
+
+# Overview of the data
+
+The main information available is composed yearly records of multiple indicators across multiple countries. In total, information on 19 indicators over 210 different countries from 2000 up to 2014 was recolted. This information can be downloaded publicly from the dedicated website [World Bank Open Data](https://data.worldbank.org/indicator) or through the R -`WDI`- package. Indicators include markers of economical and financial factors such as GDP, GPD growth, GNI, total governement reserved in USD or socio-economical factors such as population, enrollement in primary, secondary and tertiary schools or fertility rate. See [Appendix A1](#a1.-indicators) for an overview and description of every indicators.
+
+As differentiation between 210 different countries can prove to be difficult. Fortunately, the World Bank Group provides a robust and systematic methodology for classifying countries by income level[^atlas-blog]. This classification is based on the Gross National Income in US dollar for each country. The classification differ every year. [Appendix A2](#a2.-wealth-classes-(2000-2024)) displays the full extrend of the income classes requirement for every year.
+
+[^atlas-blog]: [A World Bank Blog article about the methodology](https://blogs.worldbank.org/en/opendata/world-bank-country-classifications-by-income-level-for-2024-2025)
+
+
+| Label | 2022 | 2023 | 2024 |
+|-------|------|------|------|
+| High (H) | <= ,.135 | <= 1,145 | <= 1,135 |
+| Upper Middle (UM) | 1,136 - 4,465| 1,146 - 4,515 | 1,136 - 4,495 |
+| Lower Middle (LM) | 4,466 - 13,845 | 4,516 - 14,005 | 4,496 - 13,935 |
+| Low (L) | > 13,845 | > 14,005 | > 13,935 |
+
+: Wealth classes {#tbl-wealth-meta}
+
+::: {#tbl-panel layout-ncol=2}
+| Variable | Type | NaN | Unique |
+|----------|------|-----|--------|
+| country  | Categorical | 0 | x |
+| iso2c    | Categorical | 0 | x |
+| iso3c    | Categorical | 0 | x |
+| wealth_class | Categorical | 0 | 4 |
+
+: Identifier {#tbl-first}
+
+| Col1 | Col2 | Col3 |
+|------|------|------|
+| A    | B    | C    |
+| E    | F    | G    |
+| A    | G    | G    |
+
+: Economical Indicator {#tbl-second}
+
+| Col1 | Col2 | Col3 |
+|------|------|------|
+| A    | B    | C    |
+| E    | F    | G    |
+| A    | G    | G    |
+
+: Socio-economial Indicator {#tbl-second}
+
+Data overview
+:::
+
+For more insights into the joining process, refer to [data_joining](data_joining.qmd).
+
+## Missing Values
+
+As @tbl-panel shows, some indicators contain a lot of missing values. Handling missing values should be done with care, as it influences the quality of the overall dataset and thus the prediction. Indeed, in our case removing rows containing missing values could bias the analysis, as the proportion of missing values in country with lower income is different than in country with higher income. Additionnaly, removing entire column could prove detrimental to the overall analysis as we could inadvertently remove important informations. Thus, the removal strategy will depend in the analysis performed.
+
+In the graph below, you can observe the map representation of those missing values, across all countries and summed up over the years.
+
+Since our time granularity is year, this means that countries in red provide very few information at all. Additionnaly, even though european countries seems to contain less missing values than others countries, they are not exempt of them.
+Some indicators seems less present in poorer countries. However, other factors could influence the presence of missing values other the the poverty of the country. For example, strict and opaque political regime, such as China, are less likely to divulge truthful information, if any at all.
+
+```{r}
+#| include: true
+#| label: Worldplot of missing value for GDP
+#| fig-cap: fig-worldplot
+
+## Number of total missing value per country per year
+na_count <- join_labeled %>%
+    ## Transform in longer fromat for easier NaN's count computation
+    pivot_longer(
+        cols = inflation_pct:pop_growth_pct,
+        names_to = "indicator",
+        values_to = "indic_values") %>% 
+    group_by(country, indicator) %>% 
+    ## detect NA values per country, year and indicator
+    mutate(
+        is_na = is.na(indic_values),
+        na_count = sum(is_na),
+        country = as.factor(country),
+        country = recode(country, "United States" = "USA", "Russian Federation" = "Russia")) ## Renaming for consistency
+
+
+## Get world's countries coordinates
+map <- map_data("world") %>% 
+    ## Join countries coordinates with NaN's summary
+    ## Inner-join to rule out discrepancy between 'world' and 'is_na'
+    inner_join(
+        .,
+        na_count %>% filter(indicator == "debt_gdp_pct"),
+        by=c("region"="country"),
+        relationship = "many-to-many")
+
+## Create a map of the world, filled by amount of NaN's per countries
+plain <- theme(
+    axis.text = element_blank(),
+    axis.line = element_blank(),
+    axis.ticks = element_blank(),
+    panel.border = element_blank(),
+    panel.grid = element_blank(),
+    axis.title = element_blank(),
+    plot.title = element_text(hjust = 0.5),
+    plot.title.position = "plot",
+    panel.background = element_rect(fill = "white"))
+
+## Create a map of the world, filled by amount of NaN's per countries
+worldplot <- map %>% 
+    ggplot(
+        data = .,
+        mapping = aes(x = long, y = lat)) +
+    coord_fixed(1.3) +
+    geom_polygon(
+        mapping = aes(fill = na_count, group = group)) +
+    scale_fill_distiller(palette = "RdBu", name = "NaN's Amount") +
+    ggtitle("Total missing value in Dept (% of GDP)") +
+    labs(caption = "Remark, divergence between country name might create blank values") +
+    plain
+
+ggplotly(worldplot)
+```
+
+# Exploration
+
+## Predictors
+
+Our main point of focus is the inflation rate. Thus, let's plot this for all available countries first. Luckily, this variable hardly contain any missing values at all (`{r} round(sum(is.na(join_labeled$inflation_pct)) / length(join_labeled$inflation_pct), digits = 3)` - `{r} sum(is.na(join_labeled$inflation_pct))`). Hence, we can just leave them aside for now.
+
+Looking at inflation broadly, we observe a high amount of extreme values and a huge concentration around 0. Ultimately, this also means that we don't see much of information here. Hence, transforming the data into some more normally distributed, and thus reducing the influence of extreme values might be usefull. The plot below illustrate that a logarithmic transformation works particularly well here.
+
+```{r}
+#| include: true
+p1 <- ggplot(
+    data = join_labeled,
+    mapping = aes(x = year, y = inflation_pct)) +
+        geom_point(color = "#2b8cbe", alpha = 0.3) +
+        geom_smooth(color = "black", method="lm") +
+        geom_smooth(color = "blue", method = "gam") +
+        labs(x = "Year", y = "Inflation (%)") +
+        theme_minimal()
+
+p2 <- ggplot(
+    data = join_labeled,
+    mapping = aes(x = year, y = log(inflation_pct))) +
+        geom_point(color = "#2b8cbe", alpha = 0.3) +
+        geom_smooth(color = "black", method="lm") +
+        geom_smooth(color = "blue", method = "gam") +
+        labs(x = "Year", y = "Ln(Inflation) (%)") +
+        theme_minimal()
+
+p3 <- ggplot(
+    data = join_labeled,
+    mapping = aes(x = inflation_pct)) +
+        geom_density(fill = "#2b8cbe", color = "#2b8cbe", alpha = 0.3) +
+        labs(x = "Inflation (%)", y = "Density)") +
+        theme_minimal()
+
+p4 <- ggplot(
+    data = join_labeled,
+    mapping = aes(x = log(inflation_pct))) +
+        geom_density(fill = "#2b8cbe", color = "#2b8cbe", alpha = 0.3) +
+        labs(x = "Ln(Inflation) (%)", y = "Density") +
+        theme_minimal()
+
+(p1 + p2) / (p3 + p4) + plot_annotation(title = "Inflation and log-transformed inflation distribution")
+```
+
+Here, we can observe that, although inflation rate was relatively low across the past 25 years, some countries still experienced and are still experiencing comparatively high inflation (\~20 %) compared to other countries. Additionnaly the richest the country, the less inflation it has.
+
+Concerning trend, poorest countries (L & LM) demonstrate a clear overall pattern across the past 25 years. Their inflation rate diminished up around 2010 before increasing again. Upper-middle countries maintained a slow but steady inflation increase, while wealthier countries show a more distributed pattern. They displayed a cycle pattern of global inflation increase at major crisis (2008 - subprime crisis and 2020 - COVID crisis), before entering a deflation phase. Interestingly, only wealthy countries seemed affect by the 2008 and 2020 crisis, as if the term "Global" in Global Financial crisis don't accounts for less developed countries. This phenomenon could be due to the effect of outliers biasing the trend. Indeed, removing the impact of outliers by transforming the data, we can observe a more realistic scenario with a more gradual pattern distinction between income class. Indeed, although each classes harbors those cyclical pattern around major crisis, the extend to which their influence varies across income class. The richer the country, the more influenced they are. This could be partly explained by the highly globalized econonmy of richer country during the past years. Indeed, the richer the country, the more heavily they rely on the neighbors, the bigger the influence of global crisis are, compared to poorer country which are outside of such a globalized world.
+
+::: {#fig-inflation-log-distribution}
+```{r}
+#| include: true
+#| label: Inflation normal and log-transformed distribution
+#| fig-cap: fig-inflation-log-distribution
+
+dataplot_wealthclass_inflation <- join_labeled %>% 
+    # Select only the necessary columns before dropping NaN's
+    select(year, country, wealth_class, inflation_pct) %>% 
+    # Avoid 'NA' income class group.
+    drop_na()
+
+deviation_summary <- dataplot_wealthclass_inflation %>% 
+    group_by(wealth_class) %>% 
+    summarize(
+        mean = mean(inflation_pct),
+        standard_deviation = sd(inflation_pct),
+        quartile1 = quantile(inflation_pct, 0.25),
+        quartile3 = quantile(inflation_pct, 0.75)
+    )
+knitr::kable(deviation_summary, caption = "Important spread statistics of inflation")
+```
+::: 
+
+On top of the fact that the richer countries, the lower rate of inflation on average, inflation rate seems to vary greatly between the difference income classes. Indeed, the richer the country, the less its inflation rate varies.  Smaller rates of inflation are linked with a growing and heathly economy. Hence, the healthier the economy, the stabler it gets. 
+This stability difference could be biased by the amount of extreme values of inflation rate in poorer country. Indeed, the transformed graph shows much less variation between each income class. However, a more precise look at the distribution across income classes for the logarithmically transformed inflation would strill sreveal differences in shape and standard deviation.
+
+```{r}
+#| include: true
+
+p5 <- ggplot(
+    data = dataplot_wealthclass_inflation,
+    mapping = aes(x = year, y = inflation_pct, color = wealth_class)) +
+        geom_smooth() +
+        labs(y = "Inflation (%)", subtitle = "Normal", color = "Income class") +
+        scale_x_continuous(guide = guide_axis(check.overlap = TRUE)) +
+        theme_minimal()
+
+p6 <- ggplot(
+    data = dataplot_wealthclass_inflation,
+    mapping = aes(x = year, y = log(inflation_pct), color = wealth_class)) +
+        geom_smooth() +
+        labs(y = "Ln(Inflation) (%)", subtitle = "Logarithmically transformed", color = "Income class") +
+        scale_x_continuous(guide = guide_axis(check.overlap = TRUE)) +
+        theme_minimal()
+
+p5 / p6 + plot_annotation("Inflation developement across income class")
+```
+
+```{r}
+#| include: true
+p6 <- ggplot(
+    data = dataplot_wealthclass_inflation,
+    mapping = aes(x = log(inflation_pct), fill = wealth_class)) +
+        geom_density(alpha = 0.3) +
+        labs(x = "Ln(Inflation) (%)", y = "Density", fill = "Income Class") +
+        theme_minimal()
+
+ggplotly(p6)
+```
+
+## Indicators
+
+Understanding other indicators on top of the behavior of inflation is necessary.
+
+```{r}
+#| include: true
+#| label: fig-heatmp 
+#| fig-cap: Correlation Heatmap
+cmatrix_indic <- join_labeled %>% 
+    select(where(is.numeric), -inflation_pct) %>% 
+    cor(., use = "complete.obs")
+
+corplot <- ggcorrplot(
+    cmatrix_indic, 
+    method = c("square"),
+    type = "upper",
+    show.legend = TRUE,
+    colors = c("tomato2", "white", "springgreen3"), 
+    title = "Peason Correlation Heatmap"
+)
+
+ggplotly(corplot)
+```
+
+**Relationships between socio-economical indicators**
+
+Overall, socio-econmical factors seems to form a cluster of relatively strongly postively associated variables, with the exception of fertility rate which most harbors negative association of medium strength.
+Unsurprisingly, secondary education enrolment also presents a high positive association with the gross enrolment in tertiary education, since secondary education is a requirement for tertiary education. 
+Additionnaly, education enrolement, whether be it primary, secondary or tertiary, seems to be positively associated with the percentage of urban population. This relationship is a medium strength, indicating the higher the percentage of people living in cities, the higher the overall enrolement rate of a country increase. There could be potential third-party variables influencing this relationships. For example, the bigger the city, the more important at a national scale it is and the more money is generates. This, in turn, increase the amount of infrastructure of such as city, such as schools and more importantly university.
+Following the same logic, the fact that the relationship strength between the percentage of population in cities increases as the education level increases also make sense, as higher education as part of the infractures that comes with the econonmic growth of a city.
+Additionnaly, we also see that the fertility rate is strongly tied to school enrolment, as well as life expectancy. However, the relationship between life expectancy and fertility is negative, such as the higher the life expectancy of a country, the less babies are born yearly. This is phenonemon highly observable in today's society, where most rich country such as Europe, Korea or Japan has hit a abnormally low birth rate.
+
+```{r}
+#| include: true
+#| label: fig-socioeconomic-distribution
+#| fig-cap: Socio-economic indicators distributions
+
+p7 <- join_labeled %>%
+    select(life_expectancy, wealth_class) %>% 
+    ## Remove 'NaN' level from wealth_class
+    drop_na() %>% 
+    ggplot(
+        data = .
+    ) +
+    geom_density(
+        mapping = aes(x = life_expectancy, fill = wealth_class), alpha = 0.3, size = 0.2) +
+    labs(x = "Life Expectancy", y = "Density", title = "Life Expectancy Distribution") +
+    theme_minimal()
+
+p8 <- join_labeled %>%
+    select(fertility_rate, wealth_class) %>% 
+    ## Remove 'NaN' level from wealth_class
+    drop_na() %>% 
+    ggplot(
+        data = .
+    ) +
+    geom_density(
+        mapping = aes(x = fertility_rate, fill = wealth_class), alpha = 0.3, size = 0.2) +
+    labs(x = "Fertility rate", y = "Density", title = "Fertility rate Distribution") +
+    theme_minimal()
+
+p9 <- join_labeled %>%
+    select(enrol_tertiary_gross, wealth_class) %>% 
+    ## Remove 'NaN' level from wealth_class
+    drop_na() %>% 
+    ggplot(
+        data = .
+    ) +
+    geom_density(
+        mapping = aes(x = enrol_tertiary_gross, fill = wealth_class), alpha = 0.3, size = 0.2) +
+    labs(x = "Tert. gross education enrol.", y = "Density", title = "Tertiary education enrolment Distribution") +
+    theme_minimal()
+
+p10 <- join_labeled %>%
+    select(urban_pop_pct, wealth_class) %>% 
+    ## Remove 'NaN' level from wealth_class
+    drop_na() %>% 
+    ggplot(
+        data = .
+    ) +
+    geom_density(
+        mapping = aes(x = urban_pop_pct, fill = wealth_class), alpha = 0.3, size = 0.2) +
+    labs(x = "Urban population (5)", y = "Density", title = "Urban Population Distribution") +
+    theme_minimal()
+
+p7 / p8 / p9 / p10
+```
+
+**Relationships between economical indicators**
+
+Contrary to socio-economical factors, there is no obvious cluster of association between economical and financial indicators, except for the total reserve of a state which seems to the relate to much of the other economical indicators.
+As such, they are most specialized and subtle.
+For example, gross domestical product and gross national income are almost indentical ($r$ = 0.99), naturally because GDP is used to compute the GNI.
+Additionally, others economical indicators, such as broad Money, total reserve, GDP and GNI, being important indicator of an healthy and strong economy being correlated.
+Imports seems broadly associated with most economical factors as well as a few socia-economical factors such as life expenctancy and urban population.
+The high relationship between imports and exports would mean that the more a country imports, the more it exports. In this scenario, we could imagine the intervention of confounder variables driving this relationship. Indeed, imports and exports rate could act a proxy for financial well-being of an economy. Hence, the more a country imports, the better his economy, the better his economy, the more it produces, the more it produces, the more it exports. Especially, since imports and exports are computed in percentages of the GDP.
+
+
+```{r}
+#| include: true
+#| label: Economic indicators distributions
+#| fig-cap: fig-economic-distribution
+
+p11 <- join_labeled %>%
+    select(broad_money_pct, wealth_class) %>% 
+    ## Remove 'NaN' level from wealth_class
+    drop_na() %>% 
+    ggplot(
+        data = .
+    ) +
+    geom_density(
+        mapping = aes(x = broad_money_pct, fill = wealth_class), alpha = 0.3, size = 0.2) +
+    labs(x = "Broad Money", y = "Density", title = "Broad Money Distribution") +
+    theme_minimal()
+
+p12 <- join_labeled %>%
+    select(gdp_usd, wealth_class) %>% 
+    ## Remove 'NaN' level from wealth_class
+    drop_na() %>% 
+    ggplot(
+        data = .
+    ) +
+    geom_density(
+        mapping = aes(x = gdp_usd, fill = wealth_class), alpha = 0.3, size = 0.2) +
+    labs(x = "GDP ($)", y = "Density", title = "GDP Distribution") +
+    theme_minimal()
+
+p13 <- join_labeled %>%
+    select(total_reserve_usd, wealth_class) %>% 
+    ## Remove 'NaN' level from wealth_class
+    drop_na() %>% 
+    ggplot(
+        data = .
+    ) +
+    geom_density(
+        mapping = aes(x = total_reserve_usd, fill = wealth_class), alpha = 0.3, size = 0.2) +
+    labs(x = "Total reserve ($)", y = "Density", title = "Total Reserve ($) Distribution") +
+    theme_minimal()
+
+p14 <- join_labeled %>%
+    select(exports_gdp_pct, wealth_class) %>% 
+    ## Remove 'NaN' level from wealth_class
+    drop_na() %>% 
+    ggplot(
+        data = .
+    ) +
+    geom_density(
+        mapping = aes(x = exports_gdp_pct, fill = wealth_class), alpha = 0.3, size = 0.2) +
+    labs(x = "Exports (% of GDP)", y = "Density", title = "Exports Distribution") +
+    theme_minimal()
+
+p11 / p12 / p13 / p14
+```
+
+**Distribution**
+
+Over, socio-economic and economic indicators tends to have extremely heavy tails, similar to inflation rate. As such, this prompts the prompt the relationship between inflation rate and such predictor to be non-linear, particularly for economic indicators.
+Hence, similarly to inflation rate, a logarithmic transformation for those values would help futur estimates, making them less biased.
+
+```{r}
+#| include: true
+
+p15 <- ggplot(
+        data = join_labeled,
+        mapping = aes(x = broad_money_pct, y = inflation_pct)
+    ) +
+    geom_point(color = "#2683e0ff", alpha = 0.4) +
+    labs(x = "Broad Money (%)", y = "Inflation (%)", title = "Broad Money - Inflation relationship") +
+    theme_minimal()
+
+p16 <- ggplot(
+        data = join_labeled,
+        mapping = aes(x = total_reserve_usd, y = inflation_pct)
+    ) +
+    geom_point(color = "#2683e0ff", alpha = 0.4) +
+    labs(x = "Total Reserve ($)", y = "Inflation (%)", title = "Total Reserve - Inflation relationship") +
+    theme_minimal()
+
+p17 <- ggplot(
+        data = join_labeled,
+        mapping = aes(x = gdp_usd, y = inflation_pct)
+    ) +
+    geom_point(color = "#2683e0ff", alpha = 0.4) +
+    labs(x = "GDP ($)", y = "Inflation (%)", title = "GDP - Inflation relationship") +
+    theme_minimal()
+
+p18 <- ggplot(
+        data = join_labeled,
+        mapping = aes(x = log(broad_money_pct), y = log(inflation_pct))
+    ) +
+    geom_point(color = "#2683e0ff", alpha = 0.4) +
+    labs(x = "Ln(Broad Money) (%)", y = "Ln(Inflation) (%)", title = "Ln(Broad Money) - Ln(Inflation) relationship") +
+    theme_minimal()
+
+p19 <- ggplot(
+        data = join_labeled,
+        mapping = aes(x = log(total_reserve_usd), y = log(inflation_pct))
+    ) +
+    geom_point(color = "#2683e0ff", alpha = 0.4) +
+    labs(x = "Ln(Total Reserve) ($)", y = "Ln(Inflation) (%)", title = "Ln(Total Reserve) - Ln(Inflation) relationship") +
+    theme_minimal()
+
+p20 <- ggplot(
+        data = join_labeled,
+        mapping = aes(x = log(gdp_usd), y = log(inflation_pct))
+    ) +
+    geom_point(color = "#2683e0ff", alpha = 0.4) +
+    labs(x = "Ln(GDP) ($)", y = "Ln(Inflation) (%)", title = "Ln(GDP) - Ln(Inflation) relationship") +
+    theme_minimal()
+
+(p15 + p18) / (p16 + p19) / (p17 + p20)
+```
+
+## Statistical Analysis
+
+### Do richer country have lower inflation rate?
+
+Say that the inflammation rate of each country is a random variable $X$ of 25 observation recolted over the years such that:
+
+$$
+X = \{x_1, x_2, x_3, \dots, x_{25}\}
+$$
+
+$X$ is auto-correlated since $x_i$ depends on previous values. Indeed, if $x_{22}$ is high, there is a higher chance that $x_{23}$ will high as well. As such, $X$ isn't independent.
+
+```{r}
+#| include: true
+ch_acf <- acf(
+    join_labeled %>% filter(country == "Switzerland") %>% select(inflation_pct),
+    plot = FALSE)
+
+print("Auto-correlation of Switzerland's inflation a different lag year:")
+print(ch_acf)
+```
+
+Additionnaly, it is hard to assume that the inflation rate of each country is independant on another. A particular example is demonstrated below.
+
+```{r}
+#| include: true
+ch_fr_cor <- cor(
+    join_labeled %>% filter(country == "Switzerland") %>% select(inflation_pct),
+    join_labeled %>% filter(country == "France") %>% select(inflation_pct),
+)
+
+print(paste0("Switzerland - France correlation: ", round(ch_fr_cor[1, 1], digits = 3)))
+```
+
+More specifically, the mean correlation between the inflation rate of all rich country is 0.44. It is enough for us to be prudent and assume dependance on this side.
+
+```{r}
+#| include: true
+
+wide_country <- join_labeled %>% 
+    filter(wealth_class == "H") %>% 
+    select(inflation_pct, year, country) %>%
+    drop_na() %>%
+    group_by(year) %>% 
+    mutate(mean = mean(inflation_pct)) %>% 
+    pivot_wider(id_cols = year, names_from = country, values_from = mean, values_fill = 0) %>% 
+    ungroup() %>% 
+    select(-year)
+
+cor_matrix <- expand.grid(colnames(wide_country), colnames(wide_country))
+
+correlation = c()
+for (i in 1:4761){
+    row = cor_matrix[i, ]
+    x_country = row[["Var1"]]
+    y_country = row[["Var2"]]
+    x = join_labeled %>% filter(country == x_country) %>% select(inflation_pct)
+    y = join_labeled %>% filter(country == y_country) %>% select(inflation_pct)
+    p = cor(x[, 1], y[, 1], use="complete")
+    correlation = append(correlation, p)
+}
+
+cor_matrix = cbind(cor_matrix, correlation)
+
+mean_cor <- mean(cor_matrix[cor_matrix$correlation < 1, ]$correlation)
+
+print(paste0("Mean pearson correlation between countries: ", round(mean_cor, digits=2)))
+
+```
+
+Nonetheless, we try our best to meet this condition by randomly taking a sample of observation in each group. This way, we reduce the possibility of cross and within-country influence on the inflation rate. This case is a classic case of an unpaired test, testing difference in means. A common test for this scenario would be an analysis of variance (ANOVA) or non-parametric tests.
+
+In our example, as demonstrated by the plots below the data isn't normally distributed. In fact, the distribution looks very similary to the gamma distribution. Mapping the inflation rate to all countries with a gamma distribution $\Gamma(3, 0.5)$, we can see the heavy similarity between the two. Since the observation of each wealth class seems to come from a similar gamma distribution, the assumption of identically distributed observations is statisfied. Hence, a sensible choice would be to go for a non-parametric tests, less sensible to outlier and extreme values. More specifically, a Kruskal-Wallis test since we 4 independent group: "H", "UM", "LM" and "L".
+
+```{r}
+#| include: true
+
+ww_density <- ggplot(
+    data = dataplot_wealthclass_inflation,
+    mapping = aes(x = inflation_pct)) +
+    geom_density(color = "#addd8e", size = 0.75) +
+    labs(x = "Inflation (%)", y = "Density") +
+    ggtitle("'World-wide Inflation Distribution") +
+    theme_minimal()
+
+cls_density <- ggplot(
+    data = dataplot_wealthclass_inflation,
+    mapping = aes(x = inflation_pct, color = wealth_class)) +
+    geom_density(size = 0.75) +
+    xlim(0, 400) +
+    labs(x = "Inflation (%)", y = "Density") +
+    ggtitle("Inflation Distribution by Wealth Class") +
+    theme_minimal() + 
+    facet_wrap(~wealth_class)
+
+print(ww_density)
+print(cls_density)
+```
+
+```{r}
+#| include: true
+
+gamma <- rgamma(length(dataplot_wealthclass_inflation$inflation_pct), 3, rate=0.5)
+ww_density_gamma <- ggplot(
+    data = dataplot_wealthclass_inflation) +
+    geom_density(
+        mapping = aes(x = inflation_pct, color = "Inflation"), 
+        size = 0.75) +
+    geom_density(
+        mapping = aes(x = gamma, color = "Gamma"), 
+        size = 0.75) +
+    ggtitle("Goodness of fit with gamma distribution") + 
+    scale_color_manual(values = c("Inflation" = "#addd8e", "Gamma" = "#2c7fb8")) +
+    labs(x = "Inflation (%)", y = "Density", color = "Distribution") +
+    theme_minimal()
+print(ww_density_gamma)
+```
+
+As per the Kruskal-Wallis Test, we observe strong evidence against the null hypothesis that the median inflation difference between income classes is not 0. More specifically, we observe strong evidence against the null hypothesis that the median inflation difference of each income class is not 0. In other words, each wealth class are significantly different from each other. Since the sample size is big, the effect size is a biased statistic, hence why we compute the effect size alongside it. Said effect size is considered large and thus support the previous significant claims.
+More importantly, the same test performed on the logarithmic transformed inflation, less biased by outlier deliver similar results.
+
+**Conclusion:** The richer the country, the lower is the inflation rate. **However**, it is important to note that such insights need to be taken with a grain of salt, as observation aren't totally independant of each other.
+
+```{r}
+#| include: true
+random_sample <- join_labeled %>% 
+    select(wealth_class, country, inflation_pct) %>% 
+    drop_na() %>% 
+    group_by(wealth_class) %>% 
+    slice_sample(prop=0.25) %>% 
+    ungroup()
+
+kw_model_normal <- kruskal.test(inflation_pct ~ wealth_class, data = random_sample)
+kw_p_normal <- kw_model_normal$p.value
+
+kw_eta_normal <- random_sample %>% 
+    kruskal_effsize(inflation_pct ~ wealth_class)
+
+dunn_post_hoc <- dunn_test(random_sample, inflation_pct ~ wealth_class)
+
+print(paste0("Kruskal-Wallis Test p-value: ", kw_p_normal))
+print(
+    paste0(
+        "Kruskal-Wallis Test effect size: ",
+        round(kw_eta_normal$effsize, digits = 3),
+        " with a ",
+        kw_model_normal$magnitude,
+        " magnitude"))
+
+knitr::kable(dunn_post_hoc %>% select(.y., group1, group2, p.adj, p.adj.signif))
+```
+
+```{r}
+kw_model_log <- kruskal.test(log(inflation_pct) ~ wealth_class, data = random_sample)
+kw_p_log <- kw_model_log$p.value
+
+kw_eta_normal <- random_sample %>% 
+    kruskal_effsize(inflation_pct ~ wealth_class)
+
+print(paste0("Kruskal-Wallis Test p-value: ", kw_p_log))
+print(
+    paste0(
+        "Kruskal-Wallis Test effect size: ",
+        round(kw_eta_normal$effsize, digits = 3),
+        " with a ",
+        kw_eta_normal$magnitude,
+        " magnitude"))
+```
+
+### Do richer country have a more stable inflation rate compared to poorer countries?
+
+In [Inflation trend per wealth class](#inflation-trend-per-wealth-class) we've observed graphically the variation difference in inflation between wealth classes (see @intra-class-inflation-var).
+
+In order to statistically confirm whether this assumption is right or wrong, we'll measure the standard deviation difference between each class.
+
+```{r}
+#| include: true
+join_labeled %>% 
+    select(wealth_class, inflation_pct, year) %>% 
+    drop_na() %>% 
+    group_by(wealth_class) %>% 
+    summarise(
+        sd = sd(inflation_pct),
+        log_sd = sd(log(inflation_pct), na.rm = TRUE)) %>% 
+    knitr::kable()
+```
+
+Similar to the [Previous Section](#do-richer-country-have-lower-inflation-rate), we don't consider the inflation rate of a country to be independent, as proven by the previously demonstrated by the slight auto-correlation. Hence, the same could be said by their standard deviation. Additionnaly, it is also unlikely for the inflation rate between countries to be independent. Consequently, we'll select randomly a sample from each sample, across all countries and years measured. This will ensure minimum influence of countries between each other and reduce the auto-correlation between observations of the same countries. The latter is further supported by the fact that said auto-correlation becomes negligible after 2-3 years.
+
+ Since the data isn't normally distributed, we'll use the non-parametric Kruskal-Wallis Test.
+
+As per the Kruskal-Wallis test, we observe strong evidence against the null hypothesis that the standard deviation inflation difference between income classes is not 0. More specifically, we observe strong evidence against the null hypothesis that the standard deviation inflation difference of each income class is not 0, except between low and middle low income country. In other words, the wealth class has a significant effect on the inflation standard deviation, with a large effect size. Each wealth class standard deviation is significantly different from each other.
+
+**Conclusion:** The richer the country, the stabler is the inflation rate across country. For the richer country, which experience high perturbation during the 2008 and 2020 crisis, this means that, although the inflation rate changed, everything country moved in the same direction. More importantly, a similar analysis on logarathmic transformed inflation rate, reducing the impact of outlier, deliver similar result. **However**, it is important to note that such insights need to be taken with a grain of salt, as observation are totally independant of each other.
+
+This could be the proof, or the consequence, or a highly globalized economy where each country is dependent on each other. As per the recent global economical turmoil, this can signify global drawbacks.
+
+```{r}
+#| include: true
+
+random_sample <- join_labeled %>% 
+    select(wealth_class, country, inflation_pct) %>% 
+    drop_na() %>% 
+    group_by(wealth_class) %>% 
+    slice_sample(prop=0.25) %>% 
+    mutate(
+        sd_infl_country = inflation_pct,
+        sd_infl_country_log = sd(inflation_pct), na.rm = TRUE) %>% 
+    ungroup() 
+
+kw_model_normal<- kruskal.test(sd_infl_country ~ wealth_class, data = random_sample)
+kw_p_normal <- kw_model_normal$p.value
+
+kw_eta_normal <- random_sample %>% 
+    kruskal_effsize(sd_infl_country ~ wealth_class)
+
+dunn_post_hoc <- dunn_test(random_sample, sd_infl_country ~ wealth_class)
+
+print(paste0("Kruskal-Wallis Test p-value: ", kw_p_log))
+print(
+    paste0(
+        "Kruskal-Wallis Test effect size: ",
+        round(kw_eta_normal$effsize, digits = 3),
+        " with a ",
+        kw_eta_normal$magnitude,
+        " magnitude"))
+
+knitr::kable(dunn_post_hoc %>% select(.y., group1, group2, p.adj, p.adj.signif))
+```
+
+
+```{r}
+kw_model_log <- kruskal.test(sd_infl_country_log ~ wealth_class, data = random_sample)
+
+kw_eta_log <- random_sample %>% 
+    kruskal_effsize(sd_infl_country_log ~ wealth_class)
+
+kw_p_log <- kw_model_log$p.value
+dunn_post_hoc <- dunn_test(random_sample, sd_infl_country_log ~ wealth_class)
+
+print(paste0("Kruskal-Wallis Test p-value: ", kw_p_log))
+print(
+    paste0(
+        "Kruskal-Wallis Test effect size: ",
+        round(kw_eta_log$effsize, digits = 3),
+        " with a ",
+        kw_eta_log$magnitude,
+        " magnitude"))
+```
+
+# Predicting inflation rate
+
+Due to the fact that our data is panel data, we'll use fixed-effects models to account for time and country fixed effects. 
+
+However, before modeling inflation rate based on multiple predictors, we'll need to clean the data of its missing values. 
+In the exploration part, as we were exploring a handful of indicators at a time, we could do it case by case.
+Now, however, as we're handling 19 differents indicators at the same time, we'll need a slightly more refined approach.
+See [Data Cleaning](data_cleaning.qmd) for more information. The cleaning processed revealed a dataset with little representation of low income country. In order to avoid this, we could adopt a different missing value cleaning policy based on the result of the first model.
+
+Additionnaly, in the [Exploration - Indicators](#indicators) section, we illustrated the benefits of using a log-transformation to certain indicators. We'll perform such an operation to economic indicators only, as they were the only revealing the most skewed and unfitting distribution for a linear model. Concerning socio-economical indicators, although still anormally distributed, it is still acceptable and we would want to artificially modify too many estimators as long as we don't need to. 
+Another issue is that log-transformation doesn't work with negative values, which is in minority present in inflation rate. Luckily, filtering them out isn't conceptually wrong since we focus on 'inflation' and not 'deflation'.
+
+Since we have some autocorrelation, we compute the standards error using the clustering method.
+
+```{r}
+join_clean <- readRDS(here("data", "final", "join_clean.rds"))
+
+fixelog_i <- feols(fml = log(inflation_pct) ~ log(broad_money_pct) + urban_pop_pct + enrol_tertiary_gross + net_enrol_primary + net_enrol_secondary + log(gdp_usd) + log(total_reserve_usd) + log(exports_gdp_pct)| country, data = join_clean, se = "cluster")
+
+fixelog_t <- feols(fml = log(inflation_pct) ~ log(broad_money_pct) + urban_pop_pct + enrol_tertiary_gross + net_enrol_primary + net_enrol_secondary + log(gdp_usd) + log(total_reserve_usd) + log(exports_gdp_pct)| year, data = join_clean, se = "cluster")
+
+fixelog_it <- feols(fml = log(inflation_pct) ~ log(broad_money_pct) + urban_pop_pct + enrol_tertiary_gross + net_enrol_primary + net_enrol_secondary + log(gdp_usd) + log(total_reserve_usd) + log(exports_gdp_pct) | country+year, data = join_clean, se = "cluster")
+
+etable(fixelog_i, fixelog_t, fixelog_it)
+```
+
+Accounting for only time fixed-effects, we observe strong evidence against the null hypothesis that 'broad money (%)' coefficient is equal to 0, as well as some evidence against the null hypothesis that 'enrol_tertiary_gross' coefficient is equal to 0.
+
+This difference suggest some kind of interaction between location and time fixed effect, as well as a strong bias on broad money predictors and tertiary enrollement introduced by the location. This means that there are strong time-invariant cofounder effects on those 2 predictors. This makes sense, as, as we can see in [Broad Money - Inflation](#broad-money-(---inflation)), there big broad money variation between wealth_class.
+
+We have some evidence against the null hypothesis that the coefficient of `broad_money_pct`, `net_enrol_secondary` and `total_reserve_usd` are different from 0. 
+
+Firstly, a 1% increase in the amount of financial instruments possessed by a country would lead to a 0.8571% percent increase in inflation rate. Although one might think that the more broad money a country has, the less inflation it would subject to as associating broad money with wealth seems logical.
+
+Secondly, a 1% percent increase in the amount of enrollement in secondary education (ratio based on enrollmenet / not enrolled) would decrease the inflation rate by 1.614%.
+
+Thirdly, a 1% percent increase in the bank liquid reserve would decrease the inflation rate by 0.299%.
+
+# Conclusion
+
+# GenerativeAI
+
+Generative AI is a common and powerful tool. However, hallucination and illusion of competency prompte the user to use it with care.
+In this project, we used ChatGPT at the earlier stage of the project to brainstorm ideas. In the later stage of the project, it was also used to check for the availability of R function for needed purposes and help us in overcoming bottleneck when programming.
+
+Although a powerful tool, it shouldn't come at the cost of learning. Hence, a special emphasis was set in our group to avoid using it as much as possible. Whenever used, we tried to use in a way that it didn't digest and process the information in our place. Whether be it for declarative knowledge such statistical model and their assumption, economical theory or for procedural knowledge such as programming. Our goal was to left the thinking to us.
+
+# Source
+
+Indicator dataset:
+
+1. [World Bank Group](https://data.worldbank.org/indicator)
+2. [WDI](https://cran.r-project.org/web/packages/WDI/WDI.pdf)
+3. ['join.rds'](data/processed/join.rds)
+
+Wealth classification dataset: 
+
+1. [Wealth Classification](https://datahelpdesk.worldbank.org/knowledgebase/articles/906519-world-bank-country-and-lending-groups)
+
+# Appendix
+
+## A1. Indicators
+
+Find below a short description of each indicators composing the main dataset. The description has the following format
+
+* `WDI` indicator code (human readable label): description
+
+**Description:**
+
+* FP.CPI.TOTL.ZG (inflation_pct): Inflation, consumer prices (annual %) — measures the yearly percentage change in consumer prices as measured by the consumer price index. 
+
+* GC.DOD.TOTL.GD.ZS (debt_gdp_pct): Central government debt, total (% of GDP) — the stock of direct government debt liabilities as a share of gross domestic product.
+
+* NY.GDP.MKTP.KD.ZG (gdp_growth_pct): GDP growth (annual %) —  the total income earned through the production of goods and services in an economic territory during an accounting period. Measured in USD.  
+
+* NY.GDP.MKTP.CD (gdp_usd): GDP (current US$) — the total monetary value of all goods and services produced in an economy, measured at current U.S. dollar exchange rates. 
+
+* SL.UEM.TOTL.ZS (unemployment_pct): Unemployment, total (% of labor force) — the share of the labor force that is without work but available for and seeking employment.  
+
+* NE.EXP.GNFS.ZS (exports_gdp_pct): Exports of goods and services (% of GDP) — exports of goods and non-factor services as a percentage of GDP.
+
+* NE.IMP.GNFS.ZS (imports_gdp_pct): Imports of goods and services (% of GDP) — imports of goods and non-factor services as a percentage of GDP.
+
+* SP.POP.TOTL (population_total): Population, total — the total population of a country.
+
+* FM.LBL.BMNY.GD.ZS (broad_money_pct): Broad money (% of GDP) — the sum of all liquid financial instruments held by money-holding sectors that are widely accepted in an economy as a medium of exchange expressed as a share of GDP. 
+
+* FI.RES.TOTL.CD (total_reserve_usd): Reserves and related items (total reserves in current US$) — the stock of a country’s foreign exchange and gold reserves. 
+
+* NY.GNP.MKTP.PP.CD (gni_usd): GNI, PPP (current international $) — gross national income converted to international dollars using purchasing power parity (PPP) conversion factors. 
+
+* PA.NUS.PPP (altas_conversion_factor): Atlas conversion factor — World Bank’s Atlas method to convert national currencies into U.S. dollars to smooth exchange rate fluctuations. 
+
+* SP.URB.TOTL.IN.ZS (urban_pop_pct): Urban population (% of total) — the percentage of a country’s population living in urban areas.
+
+* SP.DYN.LE00.IN (life_expectancy): Life expectancy at birth, total (years) — the average number of years a newborn is expected to live if current mortality rates continue to apply.
+
+* SE.PRM.NENR (net_enrol_primary): School enrollment, primary (% net) — net enrollment rate in primary education: pupils of official primary school age enrolled as a proportion of the total population of that age.
+
+* SE.SEC.NENR (net_enrol_secondary): School enrollment, secondary (% net) — net enrollment rate in secondary education. 
+
+* SE.TER.ENRR (enrol_tertiary_gross): School enrollment, tertiary (% gross) — the gross enrollment ratio for tertiary education: total enrollment in tertiary education, regardless of age, expressed as a percentage of the official tertiary education age. 
+
+* SP.DYN.TFRT.IN (fertility_rate): Fertility rate, total (births per woman) — the average number of children that would be born to a woman over her lifetime if she were to experience the age-specific fertility rates of a given period.  
+
+* SP.POP.GROW (pop_growth_pct): Population growth (annual %) — the annual percentage growth rate of the total population, including the effects of natural increase and net migration.
+
+## A2. Wealth classes (2000-2024)
+
+Find below the classification rule for the income level classes from 2000 until 2024.
+
+* L: low income class
+* LM: lower middle income class
+* UM: upper middle income class
+* H: High income class
+
+```{r}
+#| include: true
+wealth <- read.csv(here("data", "raw", "country_wealth_labels_meta.csv"))
+
+# Remove the 'X' in the years column
+colnames(wealth) <- append(c("labels"), sapply(seq(1987, 2024), FUN = as.character))
+
+wealth %>% 
+    select("labels", "2000":"2024") %>% 
+    DT::datatable(
+        .,
+        options = list(
+            dom = 't'
+        ))
+```
