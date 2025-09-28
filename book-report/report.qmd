@@ -40,7 +40,7 @@ library(fixest)
 ```
 
 ```{r}
-join_labeled <- readRDS("/Users/robingirardin/school/inflation-developement/data/processed/join_labeled.rds")
+join_labeled <- readRDS("../data/processed/join_labeled.rds")
 ```
 
 
@@ -852,7 +852,7 @@ Find below the classification rule for the income level classes from 2000 until 
 
 ```{r}
 #| include: true
-wealth <- read.csv("/Users/robingirardin/school/inflation-developement/data/raw/country_wealth_labels_meta.csv")
+wealth <- read.csv("../data/raw/country_wealth_labels_meta.csv")
 
 # Remove the 'X' in the years column
 colnames(wealth) <- append(c("labels"), sapply(seq(1987, 2024), FUN = as.character))
