@@ -32,8 +32,6 @@ format:
     theme:
       - cosmo
       - brand
-  pdf:
-    documentclass: scrreprt
 
 
 
