@@ -691,7 +691,7 @@ print(
         "Kruskal-Wallis Test effect size: ",
         round(kw_eta_normal$effsize, digits = 3),
         " with a ",
-        kw_model_normal$magnitude,
+        as.character(kw_model_normal$magnitude),
         " magnitude"))
 
 dunn_post_hoc %>% 
@@ -699,32 +699,33 @@ dunn_post_hoc %>%
     DT::datatable(
         options = list(
             searching = FALSE,
-            pagins = FALSE),
+            paging = FALSE),
         class = "compact",
         colnames = c("Variable", "Group 1", "Group2", "P-value adj"))
 
 ```
 
 ```{r}
+#| include: true
 kw_model_log <- kruskal.test(log(inflation_pct) ~ wealth_class, data = random_sample)
 kw_p_log <- kw_model_log$p.value
 
-kw_eta_normal <- random_sample %>% 
-    kruskal_effsize(inflation_pct ~ wealth_class)
+kw_eta_log <- random_sample %>% 
+    kruskal_effsize(log(inflation_pct) ~ wealth_class)
 
-print(paste0("Kruskal-Wallis Test p-value: ", kw_p_log))
+print(paste0("Kruskal-Wallis Test inflation p-value for log-transformed inflation: ", kw_p_log))
 print(
     paste0(
-        "Kruskal-Wallis Test effect size: ",
-        round(kw_eta_normal$effsize, digits = 3),
+        "Kruskal-Wallis Test effect size for log-transformed inflation: ",
+        round(kw_eta_log$effsize, digits = 3),
         " with a ",
-        kw_eta_normal$magnitude,
+        as.character(kw_eta_log$magnitude),
         " magnitude"))
 ```
 
 ### Do richer country have a more stable inflation rate compared to poorer countries?
 
-We've preivously observed graphically the variation difference in inflation between wealth classes (see @fig-fig-intra-group-var-inflation).
+We've preivously observed graphically the variation difference in inflation between wealth classes (see @fig-intra-group-var-inflation).
 
 In order to statistically confirm whether this assumption is right or wrong, we'll measure the standard deviation difference between each class.
 
@@ -782,7 +783,7 @@ print(
         "Kruskal-Wallis Test effect size: ",
         round(kw_eta_normal$effsize, digits = 3),
         " with a ",
-        kw_eta_normal$magnitude,
+        as.character(kw_eta_normal$magnitude),
         " magnitude"))
 
 dunn_post_hoc %>% 
@@ -790,13 +791,14 @@ dunn_post_hoc %>%
     DT::datatable(
         options = list(
             searching = FALSE,
-            pagins = FALSE),
+            paging = FALSE),
         class = "compact",
         colnames = c("Variable", "Group 1", "Group2", "P-value adj"))
 ```
 
 
 ```{r}
+#| include: true
 kw_model_log <- kruskal.test(sd_infl_country_log ~ wealth_class, data = random_sample)
 
 kw_eta_log <- random_sample %>% 
@@ -805,10 +807,10 @@ kw_eta_log <- random_sample %>%
 kw_p_log <- kw_model_log$p.value
 dunn_post_hoc <- dunn_test(random_sample, sd_infl_country_log ~ wealth_class)
 
-print(paste0("Kruskal-Wallis Test p-value: ", kw_p_log))
+print(paste0("Kruskal-Wallis Test inflation p-value for log-transformed: ", kw_p_log))
 print(
     paste0(
-        "Kruskal-Wallis Test effect size: ",
+        "Kruskal-Wallis Test effect size for log-transformed inflation: ",
         round(kw_eta_log$effsize, digits = 3),
         " with a ",
         kw_eta_log$magnitude,
