@@ -1,0 +1,175 @@
+---
+title: "Data Joining"
+format: html
+execute: 
+    echo: true
+    include: true
+    message: false
+    warning: false
+---
+
+
+The analysis is supported by 3 different datasets. The first dataset - `main` - contains financial and economical indicators of multiple countries between 2000 and 2024. The second dataset - `comp`, similar to `main`, contains socio-economical indicators of multiple countries between 2000 and 2024. The third dataset contains yearly country classificaiton by income level.
+
+Naturally, those 3 different dataset needs to be merged into a single dataset. The first steps will be to merge `main` and `comp` together. The second step will be to add the wealth classification. The joining process as well as the choiced made are explained below.
+
+```{r}
+library(DT)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(plotly)
+library(patchwork)
+library(rstatix)
+library(GGally)
+library(ggcorrplot)
+library(fixest)
+library(here)
+library(psych)
+```
+
+```{r}
+# Data used in most plots (has life_expectancy, fertility_rate, etc.)
+join_labeled <- readRDS(here("data", "processed", "join_labeled.rds"))
+
+# Data used in the Appendix.
+# Has descriptive uses mostly in this notebook
+wealth <- read.csv(here("data", "raw", "country_wealth_labels_meta.csv"))
+# Rename columns for aethestics
+colnames(wealth) <- append(c("labels"), sapply(seq(1987, 2024), FUN = as.character))
+```
+
+# Indicator datasets join
+
+As mentioned before, the first step is the merging of both datasets of indicators. As demonstrated below, there are multiple candidates for merging keys:
+
+-   'year': containing unique year value from 2000 to 2024
+-   'country': containing 265 countries around the world name in the english locale.
+-   'iso2c' and 'iso3c', which are country identifiers.
+
+As the 'comp' data is only complementary to 'main', a right join on main is sensible. In order to avoid duplicated columns, we'll join those 4 possible identifiers.
+
+```{r}
+dir <- "/Users/robingirardin/school/inflation-developement/"
+main <- readRDS(paste0(dir, "data/raw/main.rds"))
+comp <- readRDS(paste0(dir, "data/raw/comp.rds"))
+```
+
+```{r}
+print(paste0("Length of the 'year' column in `main`: ", length(main$year)))
+print(paste0("Length of the 'year' column in `comp`: ", length(comp$year)))
+
+print(
+  paste0("'year' in main ranges from ", min(main$year), "to ", max(main$year))
+)
+print(
+  paste0("'year' in main ranges from ", min(comp$year), "to ", max(comp$year))
+)
+```
+
+```{r}
+print(
+  paste0(
+         "Amount of recorded unique countries in `main`: ",
+         length(unique(main$country)),
+         " for ",
+         length(main$country),
+         " total observations")
+)
+print(
+  paste0(
+         "Amount of recorded unique countries in `comp`: ",
+         length(unique(comp$country)),
+         " for ",
+         length(comp$country),
+         " total observations")
+)
+
+print(
+  paste0(
+         "Is Switzerland named 'Switzerland' (EN)? ",
+         ("Switzerland" %in% unique(main$country)) &
+           ("Switzerland" %in% unique(comp$country)))
+)
+```
+
+```{r}
+join <- left_join(main, comp, by = c("year", "country", "iso2c", "iso3c"))
+```
+
+# Wealth classification
+
+We used the historical classification dataset and then joined them with the already `join` data. As the original dataset format (XLSX) of the wealth classification was unsuited for conversion to CSV, we operated a small manual transformation procedure. A prior cleaning and transformation steps will unsure that both this and `join` dataset's format and compatible.
+
+```{r}
+wealth <- read.csv(paste0(dir, "data/raw/country_wealth_labels.csv"))
+
+knitr::kable(wealth[1:5, 1:5])
+```
+
+## Cleaning
+
+First, the wide-format dataset needs to be transformed into a long-format one. All columns except for country corresponds to yearly date, will be aggregated under a `year` variable and its values under a `wealth_class` categorical variable.
+
+Then each year will be stripped of their 'X' character and transformed into integers. Additionnaly, we'll group ".." and "" wealth categories together since they both signifies missing values and labeled them as missing values.
+
+```{r}
+
+## Cleaning pipeline for the wealth classification dataset
+long_wealth <- wealth %>%
+
+  ## Renaming variables
+  rename("iso3c" = X) %>%
+  rename_with(.fn = ~ gsub("X", "", .x)) %>%
+
+  ## Aggregate all variables symbolising a year date
+  ## into a single variable called `year`
+  ## and each a wealth class for each year under a `wealth_class` class.
+  pivot_longer(
+               cols = colnames(.)[!(grepl("country|iso3c", colnames(.)))],
+               names_to = "year",
+               values_to = "wealth_class") %>%
+
+  ## Make sure that each date under `year` is numeric and not a string.
+  mutate(year = as.numeric(year)) %>%
+
+  ## Take care of different labels used for missing values.
+  mutate(
+         wealth_class = sub("[.]{2}", "", wealth_class),
+         wealth_class = na_if(wealth_class, ""))
+
+
+knitr::kable(long_wealth[1:5, 1:4])
+```
+
+Finally, we'll join both this dataset with the main dataset, `join`. However, the `join` dataset contains more countries than the historical wealth classification have (48). Indeed, the `join` dataset contains mislabeled items, such as 'Low Middle Income' or 'World'. In contrast, the historical wealth classification dataset contains no mislabeling. Those mislabeled information aren't useful in our work since we only look at country, and not any other made categorization. This mean that the wealth classification data offers a way of filter out those mislabeling. It also span a longer time period, going back to 1984, compared to 2000 for the main dataset. Hence, we'll do an inner join on `country`, `iso3c` and `year`.
+
+**Remark:** Additionnal meta information about the `wealth_class` can be found inside `data/raw/country_wealth_labels_meta.csv`.
+
+```{r}
+print(
+  paste0(
+    "Countries amount difference between `join` and wealth classification dataset: ",
+    length(unique(join$country)) - length(unique(long_wealth$country)))
+)
+```
+
+```{r}
+long_wealth %>%
+  select(country, iso3c) %>%
+  unique() %>%
+  arrange(country) %>%
+  print(n = Inf)
+
+join %>%
+  select(country, iso3c) %>%
+  unique() %>%
+  arrange(country) %>%
+  print()
+
+```
+
+```{r}
+join_labeled <-
+  inner_join(join, long_wealth, by = c("country", "iso3c", "year"))
+```

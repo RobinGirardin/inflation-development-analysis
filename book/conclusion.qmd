@@ -1,0 +1,39 @@
+---
+title: "Conclusion"
+format: html
+execute: 
+    echo: false
+    include: false
+    message: false
+    warning: false
+---
+
+Our report looked at how inflation behaves across different countries and which factors help explain its movements. Descriptive analysis showed that richer countries generally have lower and more stable inflation, while poorer countries experience higher levels and more variability. We also saw that global crises (like 2008 or 2020) hit high-income countries more strongly, likely because they are more integrated in global markets.
+
+To go beyond description, we used a fixed-effects panel model. The idea is simple: instead of comparing very different countries directly, the model looks at how each country changes compared to its own past, while also controlling for global shocks in specific years. This way we can ask: when something changes inside a country, what happens to inflation?
+
+Three main findings stand out:
+
+**1. Broad money growth increases inflation.**
+The model shows that when the money supply grows faster, inflation tends to rise. For example, if a country increases its broad money by 10%, inflation is predicted to be around 8–9% higher than otherwise. A real-world picture: if suddenly there is more cash and credit available but the number of goods stays the same, people compete for those goods and prices climb.
+
+**2. Education, especially secondary school enrollment, lowers inflation.**
+Countries where more teenagers stay in school see lower inflation. The estimate suggests a 10% rise in secondary enrollment is linked with about 16% lower inflation. The reasoning is that a better educated workforce improves productivity, so economies can grow without overheating. For example, if workers can produce more efficiently, extra demand doesn’t immediately translate into higher prices.
+
+**3. Higher foreign reserves help stabilize prices.**
+When central banks hold more reserves (in foreign currency or gold), inflation tends to be lower. If reserves increase by 10%, inflation is about 3% lower than it would have been. Reserves act like a buffer: they let a country defend its currency in times of stress, keeping import prices and domestic inflation more stable.
+
+We also made two checks to be sure the results are solid:
+
+* We transformed skewed variables (like money and GDP) so that extreme values didn’t distort the results.
+* We tried alternative model specifications and found the same relationships, which makes us more confident.
+
+**Example of how to use the model:** Imagine a country expects broad money to grow by 12%, reserves to increase by 8%, and secondary school enrollment to improve by 5%. Our model predicts: +10% inflation from money, −2 to −3% from reserves, and −8% from education. The combined effect is a small net increase. This is useful for governments: they can see how different policy levers interact.
+
+Of course, there are limits. The data for low-income countries is thinner, so results are less precise there. And while the model shows strong associations, it cannot prove strict causality.
+
+**Executive takeaways:**
+
+* Money growth tends to push inflation up.
+* Education and reserves help hold inflation down.
+* The model is useful for scenario planning and policy discussions, but results should be interpreted with care.
