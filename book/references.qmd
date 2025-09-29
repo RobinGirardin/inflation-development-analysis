@@ -2,3 +2,10 @@
 
 ::: {#refs}
 :::
+
+
+Data and information about economical and socio-economical indicators - [see World Bank Group](https://data.worldbank.org/indicator)
+
+WDI R library enabling efficient loading of indicators - [WDI on CRAN](https://cran.r-project.org/web/packages/WDI/WDI.pdf)
+
+Data about income classification across countries and years - [World Bank Group on Wealth Classification](https://datahelpdesk.worldbank.org/knowledgebase/articles/906519-world-bank-country-and-lending-groups)
