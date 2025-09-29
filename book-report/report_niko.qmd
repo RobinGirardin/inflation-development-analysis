@@ -10,7 +10,6 @@ execute:
     include: false
     message: false
     warning: false
-    cache: true
 format: 
     html: 
         toc: true
@@ -121,6 +120,7 @@ join_labeled %>%
 #| label: tbl-overview-economic
 #| tbl-cap: Overview of economic indicators
 #| include: true
+id_vars = c("country", "iso2c", "iso3c", "year")
 join_labeled %>% 
     ## Select economic variables only
     select(!c(id_vars, socioeco_vars)) %>% 
@@ -144,7 +144,7 @@ For more insights into the joining process, refer to [data_joining](data_joining
 
 ## Missing Values
 
-As @tbl-panel shows, some indicators contain a lot of missing values. Handling missing values should be done with care, as it influences the quality of the overall dataset and thus the prediction. Indeed, in our case removing rows containing missing values could bias the analysis, as the proportion of missing values in country with lower income is different than in country with higher income. Additionnaly, removing entire column could prove detrimental to the overall analysis as we could inadvertently remove important informations. Thus, the removal strategy will depend in the analysis performed.
+Some indicators contain a lot of missing values. Handling missing values should be done with care, as it influences the quality of the overall dataset and thus the prediction. Indeed, in our case removing rows containing missing values could bias the analysis, as the proportion of missing values in country with lower income is different than in country with higher income. Additionnaly, removing entire column could prove detrimental to the overall analysis as we could inadvertently remove important informations. Thus, the removal strategy will depend in the analysis performed.
 
 In the graph below, you can observe the map representation of those missing values, across all countries and summed up over the years.
 
@@ -153,8 +153,8 @@ Some indicators seems less present in poorer countries. However, other factors c
 
 ```{r}
 #| include: true
-#| label: Worldplot of missing value for GDP
-#| fig-cap: fig-worldplot
+#| label: fig-worldplot
+#| fig-cap: Worldplot of missing value for GDP
 
 ## Number of total missing value per country per year
 na_count <- join_labeled %>%
@@ -259,11 +259,10 @@ Here, we can observe that, although inflation rate was relatively low across the
 
 Concerning trend, poorest countries (L & LM) demonstrate a clear overall pattern across the past 25 years. Their inflation rate diminished up around 2010 before increasing again. Upper-middle countries maintained a slow but steady inflation increase, while wealthier countries show a more distributed pattern. They displayed a cycle pattern of global inflation increase at major crisis (2008 - subprime crisis and 2020 - COVID crisis), before entering a deflation phase. Interestingly, only wealthy countries seemed affect by the 2008 and 2020 crisis, as if the term "Global" in Global Financial crisis don't accounts for less developed countries. This phenomenon could be due to the effect of outliers biasing the trend. Indeed, removing the impact of outliers by transforming the data, we can observe a more realistic scenario with a more gradual pattern distinction between income class. Indeed, although each classes harbors those cyclical pattern around major crisis, the extend to which their influence varies across income class. The richer the country, the more influenced they are. This could be partly explained by the highly globalized econonmy of richer country during the past years. Indeed, the richer the country, the more heavily they rely on the neighbors, the bigger the influence of global crisis are, compared to poorer country which are outside of such a globalized world.
 
-::: {#fig-inflation-log-distribution}
 ```{r}
 #| include: true
-#| label: Inflation normal and log-transformed distribution
-#| fig-cap: fig-inflation-log-distribution
+#| label: fig-inflation-log-distribution
+#| fig-cap: Inflation normal and log-transformed distribution
 
 dataplot_wealthclass_inflation <- join_labeled %>% 
     # Select only the necessary columns before dropping NaN's
@@ -271,24 +270,31 @@ dataplot_wealthclass_inflation <- join_labeled %>%
     # Avoid 'NA' income class group.
     drop_na()
 
-deviation_summary <- dataplot_wealthclass_inflation %>% 
+dataplot_wealthclass_inflation %>% 
     group_by(wealth_class) %>% 
+    ## Key statistics by income class
     summarize(
         mean = mean(inflation_pct),
-        standard_deviation = sd(inflation_pct),
-        quartile1 = quantile(inflation_pct, 0.25),
-        quartile3 = quantile(inflation_pct, 0.75)
-    )
-knitr::kable(deviation_summary, caption = "Important spread statistics of inflation")
+        sd = sd(inflation_pct),
+        q1 = quantile(inflation_pct, 0.25),
+        q2 = quantile(inflation_pct, 0.75)) %>% 
+    ## Rounding for visibility
+    mutate_at(.vars = c("mean", "sd", "q1", "q2"), ~ round(., digits = 3)) %>% 
+    DT::datatable(
+        options = list(
+            searching = FALSE,
+            paging = FALSE),
+        class = "compact",
+    colnames = c("Income class", "Mean", "Standard deviation", "25th percentile", "75th percentile"))
 ```
-::: 
 
 On top of the fact that the richer countries, the lower rate of inflation on average, inflation rate seems to vary greatly between the difference income classes. Indeed, the richer the country, the less its inflation rate varies.  Smaller rates of inflation are linked with a growing and heathly economy. Hence, the healthier the economy, the stabler it gets. 
 This stability difference could be biased by the amount of extreme values of inflation rate in poorer country. Indeed, the transformed graph shows much less variation between each income class. However, a more precise look at the distribution across income classes for the logarithmically transformed inflation would strill sreveal differences in shape and standard deviation.
 
 ```{r}
 #| include: true
-
+#| label: fig-intra-group-var-inflation
+#| fig-cap: Inflation developement and within-group variation
 p5 <- ggplot(
     data = dataplot_wealthclass_inflation,
     mapping = aes(x = year, y = inflation_pct, color = wealth_class)) +
@@ -551,8 +557,14 @@ ch_acf <- acf(
     join_labeled %>% filter(country == "Switzerland") %>% select(inflation_pct),
     plot = FALSE)
 
-print("Auto-correlation of Switzerland's inflation a different lag year:")
-print(ch_acf)
+DT::datatable(
+    data = as.data.frame(ch_acf$acf),
+    options = list(
+        searching = FALSE,
+        paging = FALSE),
+    class = "compact",
+    colnames = c("Lag", "Auto-correlation value"),
+    rownames = paste0("Lag ", seq(0, -13)))
 ```
 
 Additionnaly, it is hard to assume that the inflation rate of each country is independant on another. A particular example is demonstrated below.
@@ -682,7 +694,15 @@ print(
         kw_model_normal$magnitude,
         " magnitude"))
 
-knitr::kable(dunn_post_hoc %>% select(.y., group1, group2, p.adj, p.adj.signif))
+dunn_post_hoc %>% 
+    select(.y., group1, group2, p.adj, p.adj.signif) %>% 
+    DT::datatable(
+        options = list(
+            searching = FALSE,
+            pagins = FALSE),
+        class = "compact",
+        colnames = c("Variable", "Group 1", "Group2", "P-value adj"))
+
 ```
 
 ```{r}
@@ -704,7 +724,7 @@ print(
 
 ### Do richer country have a more stable inflation rate compared to poorer countries?
 
-In [Inflation trend per wealth class](#inflation-trend-per-wealth-class) we've observed graphically the variation difference in inflation between wealth classes (see @intra-class-inflation-var).
+We've preivously observed graphically the variation difference in inflation between wealth classes (see @fig-fig-intra-group-var-inflation).
 
 In order to statistically confirm whether this assumption is right or wrong, we'll measure the standard deviation difference between each class.
 
@@ -717,7 +737,12 @@ join_labeled %>%
     summarise(
         sd = sd(inflation_pct),
         log_sd = sd(log(inflation_pct), na.rm = TRUE)) %>% 
-    knitr::kable()
+    DT::datatable(
+        options = list(
+            searching = FALSE,
+            paging = FALSE),
+        class = "compact",
+        colnames = c("Income class", "Standard Deviation", "Log standard deviation"))
 ```
 
 Similar to the [Previous Section](#do-richer-country-have-lower-inflation-rate), we don't consider the inflation rate of a country to be independent, as proven by the previously demonstrated by the slight auto-correlation. Hence, the same could be said by their standard deviation. Additionnaly, it is also unlikely for the inflation rate between countries to be independent. Consequently, we'll select randomly a sample from each sample, across all countries and years measured. This will ensure minimum influence of countries between each other and reduce the auto-correlation between observations of the same countries. The latter is further supported by the fact that said auto-correlation becomes negligible after 2-3 years.
@@ -760,7 +785,14 @@ print(
         kw_eta_normal$magnitude,
         " magnitude"))
 
-knitr::kable(dunn_post_hoc %>% select(.y., group1, group2, p.adj, p.adj.signif))
+dunn_post_hoc %>% 
+    select(.y., group1, group2, p.adj, p.adj.signif) %>% 
+    DT::datatable(
+        options = list(
+            searching = FALSE,
+            pagins = FALSE),
+        class = "compact",
+        colnames = c("Variable", "Group 1", "Group2", "P-value adj"))
 ```
 
 
@@ -798,6 +830,7 @@ Another issue is that log-transformation doesn't work with negative values, whic
 Since we have some autocorrelation, we compute the standards error using the clustering method.
 
 ```{r}
+#| include: true
 join_clean <- readRDS(here("data", "final", "join_clean.rds"))
 
 fixelog_i <- feols(fml = log(inflation_pct) ~ log(broad_money_pct) + urban_pop_pct + enrol_tertiary_gross + net_enrol_primary + net_enrol_secondary + log(gdp_usd) + log(total_reserve_usd) + log(exports_gdp_pct)| country, data = join_clean, se = "cluster")
@@ -811,7 +844,7 @@ etable(fixelog_i, fixelog_t, fixelog_it)
 
 Accounting for only time fixed-effects, we observe strong evidence against the null hypothesis that 'broad money (%)' coefficient is equal to 0, as well as some evidence against the null hypothesis that 'enrol_tertiary_gross' coefficient is equal to 0.
 
-This difference suggest some kind of interaction between location and time fixed effect, as well as a strong bias on broad money predictors and tertiary enrollement introduced by the location. This means that there are strong time-invariant cofounder effects on those 2 predictors. This makes sense, as, as we can see in [Broad Money - Inflation](#broad-money-(---inflation)), there big broad money variation between wealth_class.
+This difference suggest some kind of interaction between location and time fixed effect, as well as a strong bias on broad money predictors and tertiary enrollement introduced by the location. This means that there are strong time-invariant cofounder effects on those 2 predictors. This makes sense as there big broad money variation between wealth_class.
 
 We have some evidence against the null hypothesis that the coefficient of `broad_money_pct`, `net_enrol_secondary` and `total_reserve_usd` are different from 0. 
 
@@ -868,7 +901,7 @@ Indicator dataset:
 
 1. [World Bank Group](https://data.worldbank.org/indicator)
 2. [WDI](https://cran.r-project.org/web/packages/WDI/WDI.pdf)
-3. ['join.rds'](data/processed/join.rds)
+3. 'join.rds' - data/processed/join.rds
 
 Wealth classification dataset: 
 
@@ -942,5 +975,6 @@ wealth %>%
         .,
         options = list(
             dom = 't'
-        ))
+        ),
+        class = "compact")
 ```
