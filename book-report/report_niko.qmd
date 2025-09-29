@@ -38,6 +38,7 @@ library(GGally)
 library(ggcorrplot)
 library(fixest)
 library(here)
+library(psych)
 ```
 
 ```{r}
@@ -47,6 +48,11 @@ join_labeled <- readRDS(here("data", "processed", "join_labeled.rds"))
 # Data used later in the FE models
 join_clean   <- readRDS(here("data", "final", "join_clean.rds"))
 
+# Data used in the Appendix.
+# Has descriptive uses mostly in this notebook
+wealth <- read.csv(here("data", "raw", "country_wealth_labels_meta.csv"))
+# Rename columns for aethestics
+colnames(wealth) <- append(c("labels"), sapply(seq(1987, 2024), FUN = as.character))
 ```
 
 
@@ -54,51 +60,87 @@ join_clean   <- readRDS(here("data", "final", "join_clean.rds"))
 
 The main information available is composed yearly records of multiple indicators across multiple countries. In total, information on 19 indicators over 210 different countries from 2000 up to 2014 was recolted. This information can be downloaded publicly from the dedicated website [World Bank Open Data](https://data.worldbank.org/indicator) or through the R -`WDI`- package. Indicators include markers of economical and financial factors such as GDP, GPD growth, GNI, total governement reserved in USD or socio-economical factors such as population, enrollement in primary, secondary and tertiary schools or fertility rate. See [Appendix A1](#a1.-indicators) for an overview and description of every indicators.
 
-As differentiation between 210 different countries can prove to be difficult. Fortunately, the World Bank Group provides a robust and systematic methodology for classifying countries by income level[^atlas-blog]. This classification is based on the Gross National Income in US dollar for each country. The classification differ every year. [Appendix A2](#a2.-wealth-classes-(2000-2024)) displays the full extrend of the income classes requirement for every year.
+As differentiation between 210 different countries can prove to be difficult. Fortunately, the World Bank Group provides a robust and systematic methodology for classifying countries by income level[^atlas-blog]. This classification is based on the Gross National Income in US dollar for each country. The classification differ every year. [Appendix A2](#a2.-wealth-classes-2000-2024) displays the full extrend of the income classes requirement for every year.
 
 [^atlas-blog]: [A World Bank Blog article about the methodology](https://blogs.worldbank.org/en/opendata/world-bank-country-classifications-by-income-level-for-2024-2025)
 
+```{r}
+#| label: tbl-oveview-wealthclass
+#| tbl-cap: Overview of the recent income classes
+#| include: true
+wealth %>% 
+    select("labels", "2020":"2024") %>% 
+    DT::datatable(
+        options = list(
+            searching = FALSE,
+            paging = FALSE),
+        class = "compact"
+    )
+```
 
-| Label | 2022 | 2023 | 2024 |
-|-------|------|------|------|
-| High (H) | <= ,.135 | <= 1,145 | <= 1,135 |
-| Upper Middle (UM) | 1,136 - 4,465| 1,146 - 4,515 | 1,136 - 4,495 |
-| Lower Middle (LM) | 4,466 - 13,845 | 4,516 - 14,005 | 4,496 - 13,935 |
-| Low (L) | > 13,845 | > 14,005 | > 13,935 |
+The datasets counts 4 main identification variables: 
+* Country
+* Iso2c
+* Iso3c
+* Year
 
-: Wealth classes {#tbl-wealth-meta}
+ISO code aren't used and will be left out for most of the report.
 
-::: {#tbl-panel layout-ncol=2}
-| Variable | Type | NaN | Unique |
-|----------|------|-----|--------|
-| country  | Categorical | 0 | x |
-| iso2c    | Categorical | 0 | x |
-| iso3c    | Categorical | 0 | x |
-| wealth_class | Categorical | 0 | 4 |
+---
 
-: Identifier {#tbl-first}
+Find below short but usefull descriptive statistics of our key-indicators.
 
-| Col1 | Col2 | Col3 |
-|------|------|------|
-| A    | B    | C    |
-| E    | F    | G    |
-| A    | G    | G    |
+'N' symbolise the amount of 'usable' observation inside the variable. 
+Unsable observation are missing values and the maximum amount of observations is **5250**. 
 
-: Economical Indicator {#tbl-second}
+```{r}
+#| label: tbl-overview-socio-economic
+#| tbl-cap: Overview of socio-economic indicators
+#| include: true
+socioeco_vars <- c("unemployment_pct", "population_total", "urban_pop_pct", "life_expectancy", "net_enrol_primary", "net_enrol_secondary", "enrol_tertiary_gross", "fertility_rate", "pop_growth_pct")
+join_labeled %>% 
+    ## Select socio-economic variables only
+    select(all_of(socioeco_vars)) %>% 
+    ## psych::describe()
+    describe(.) %>%
+    ## Filter out unwanted descriptive statistics
+    select(n, mean, median, sd, min, max) %>% 
+    ## Rounding for visibility
+    mutate_all(.funs = ~ round(., digits = 3)) %>% 
+    ## DT::datatable for aethestics and customization
+    DT::datatable(
+        options = list(
+            searching = FALSE,
+            paging = FALSE),
+        colnames = c("N", "Mean", "Standard deviation", "Median", "Minimum", "Maximum"),
+        rownames = c("Unemployement (%)", "Population total", "Urban Population (%)", "Life expectancy", "Primary education enrol.", "Secondary education enrol.", "Tertiard enducation enrol. gross", "Fertility rate", "Population growth (%)"),
+        class = "compact")
+```
 
-| Col1 | Col2 | Col3 |
-|------|------|------|
-| A    | B    | C    |
-| E    | F    | G    |
-| A    | G    | G    |
-
-: Socio-economial Indicator {#tbl-second}
-
-Data overview
-:::
+```{r}
+#| label: tbl-overview-economic
+#| tbl-cap: Overview of economic indicators
+#| include: true
+join_labeled %>% 
+    ## Select economic variables only
+    select(!c(id_vars, socioeco_vars)) %>% 
+    ## psych::describe()
+    describe(.) %>%
+    ## Filter out unwanted descriptive statistics
+    select(n, mean, median, sd, min, max) %>% 
+    ## Rounding for visibility
+    mutate_all(.funs = ~ round(., digits = 3)) %>% 
+    ## DT::datatable for aethestics and customization
+    DT::datatable(
+        options = list(
+            searching = FALSE,
+            paging = FALSE),
+        colnames = c("N", "Mean", "Standard deviation", "Median", "Minimum", "Maximum"),
+        rownames = c("Inflation (%)", "Dept (% of GDP)", "GDP growth (%)", "GDP ($)", "Exports (% of GDP)", "Imports (% of GDP)", "Broad Money (%)", "Total reserve ($)", "GNI ($)", "Atlas Conversion Factor", "Income class"),
+        class = "compact")
+```
 
 For more insights into the joining process, refer to [data_joining](data_joining.qmd).
-
 
 ## Missing Values
 
@@ -880,7 +922,7 @@ Find below a short description of each indicators composing the main dataset. Th
 
 * SP.POP.GROW (pop_growth_pct): Population growth (annual %) — the annual percentage growth rate of the total population, including the effects of natural increase and net migration.
 
-## A2. Wealth classes (2000-2024)
+## A2. Wealth classes 2000-2024
 
 Find below the classification rule for the income level classes from 2000 until 2024.
 
@@ -891,8 +933,6 @@ Find below the classification rule for the income level classes from 2000 until 
 
 ```{r}
 #| include: true
-wealth <- read.csv(here("data", "raw", "country_wealth_labels_meta.csv"))
-
 # Remove the 'X' in the years column
 colnames(wealth) <- append(c("labels"), sapply(seq(1987, 2024), FUN = as.character))
 
