@@ -40,7 +40,7 @@ library(fixest)
 ```
 
 ```{r}
-join_labeled <- readRDS("/Users/robingirardin/school/inflation-developement/data/processed/join_labeled.rds")
+join_labeled <- readRDS("../data/processed/join_labeled.rds")
 ```
 
 
@@ -210,7 +210,6 @@ Here, we can observe that, although inflation rate was relatively low across the
 
 Concerning trend, poorest countries (L & LM) demonstrate a clear overall pattern across the past 25 years. Their inflation rate diminished up around 2010 before increasing again. Upper-middle countries maintained a slow but steady inflation increase, while wealthier countries show a more distributed pattern. They displayed a cycle pattern of global inflation increase at major crisis (2008 - subprime crisis and 2020 - COVID crisis), before entering a deflation phase. Interestingly, only wealthy countries seemed affect by the 2008 and 2020 crisis, as if the term "Global" in Global Financial crisis don't accounts for less developed countries. This phenomenon could be due to the effect of outliers biasing the trend. Indeed, removing the impact of outliers by transforming the data, we can observe a more realistic scenario with a more gradual pattern distinction between income class. Indeed, although each classes harbors those cyclical pattern around major crisis, the extend to which their influence varies across income class. The richer the country, the more influenced they are. This could be partly explained by the highly globalized econonmy of richer country during the past years. Indeed, the richer the country, the more heavily they rely on the neighbors, the bigger the influence of global crisis are, compared to poorer country which are outside of such a globalized world.
 
-::: {#fig-inflation-log-distribution}
 ```{r}
 #| include: true
 #| label: Inflation normal and log-transformed distribution
@@ -232,7 +231,7 @@ deviation_summary <- dataplot_wealthclass_inflation %>%
     )
 knitr::kable(deviation_summary, caption = "Important spread statistics of inflation")
 ```
-::: 
+
 
 On top of the fact that the richer countries, the lower rate of inflation on average, inflation rate seems to vary greatly between the difference income classes. Indeed, the richer the country, the less its inflation rate varies.  Smaller rates of inflation are linked with a growing and heathly economy. Hence, the healthier the economy, the stabler it gets. 
 This stability difference could be biased by the amount of extreme values of inflation rate in poorer country. Indeed, the transformed graph shows much less variation between each income class. However, a more precise look at the distribution across income classes for the logarithmically transformed inflation would strill sreveal differences in shape and standard deviation.
@@ -261,14 +260,14 @@ p5 / p6 + plot_annotation("Inflation developement across income class")
 
 ```{r}
 #| include: true
-p6 <- ggplot(
+p7 <- ggplot(
     data = dataplot_wealthclass_inflation,
     mapping = aes(x = log(inflation_pct), fill = wealth_class)) +
         geom_density(alpha = 0.3) +
         labs(x = "Ln(Inflation) (%)", y = "Density", fill = "Income Class") +
         theme_minimal()
 
-ggplotly(p6)
+ggplotly(p7)
 ```
 
 ## Indicators
@@ -852,7 +851,7 @@ Find below the classification rule for the income level classes from 2000 until 
 
 ```{r}
 #| include: true
-wealth <- read.csv("/Users/robingirardin/school/inflation-developement/data/raw/country_wealth_labels_meta.csv")
+wealth <- read.csv("../data/raw/country_wealth_labels_meta.csv")
 
 # Remove the 'X' in the years column
 colnames(wealth) <- append(c("labels"), sapply(seq(1987, 2024), FUN = as.character))

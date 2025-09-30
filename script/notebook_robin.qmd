@@ -275,7 +275,7 @@ Let's now see how does the inflation developed across the years for each of thos
 
 This plot offers more details compared the the previous plot. Here, we can observe that, although inflation rate was relatively low across the past 25 years, some countries still experienced and are still experiencing comparatively high inflation (\~20 %) compared to other countries. Additionnaly the richest the country, the less inflation it has.
 
-Concerning trend, poorest countries (L & LM) demonstrate a clear overall pattern across the past 25 years. Their inflation rate diminished up around 2010 before increasing again. Upper-middle countries maintained a slow and slow inflation increase, while wealthier countries show a more distributed pattern. They displayed a cycle pattern of global inflation increase at major crisis (2008 - subprime crisis and 2020 - COVID crisis), before entering a deflation phase.
+Concerning trend, poorest countries (L & LM) demonstrate a clear overall pattern across the past 25 years. Their inflation rate diminished up around 2010 before increasing again. Upper-middle countries maintained a slow but steady inflation increase, while wealthier countries show a more distributed pattern. They displayed a cycle pattern of global inflation increase at major crisis (2008 - subprime crisis and 2020 - COVID crisis), before entering a deflation phase.
 
 Interestingly, only wealthy countries seemed affect by the 2008 and 2020 crisis, as if the term "Global" in Global Financial crisis don't accounts for less developed countries.
 
@@ -311,6 +311,24 @@ cowplot::plot_grid(
     ncol = 3)
 ```
 
+Same developpement as before but by using a logarithmic transformation on the data. This transformation works great on data with heavy tails. This alternative is better than zooming in as filtering important outliers, which are integraly part of the information. In this graph, the richer the country, the lower and less stable seems inflation to be.
+
+```{r}
+join_labeled %>% 
+    select(year, country, wealth_class, inflation_pct) %>% 
+    drop_na() %>% 
+    ggplot(
+        data = .,
+        mapping = aes(x = year, y = log(inflation_pct))) +
+            geom_point(color = "#2b8cbe", alpha = 0.3) +
+            geom_smooth(
+                mapping = aes(color = wealth_class)) +
+                    labs(x = "Year", y = "Inflation (%)") +
+                    ggtitle(" Wealth class inflation rate (2000-2024)") +
+                    theme_minimal()
+```
+
+
 On top of the fact that the richer countries, the lower rate of inflation on average, intra-class variation also increase the poorer the country is. This could be partially explained by class imbalance. Indeed, although classes have a very similar numbers of **unique** countries, there is a difference in the amount of observation between classes.
 
 ```{r}
@@ -331,11 +349,26 @@ plot <- ggplot(
         method = "gam",
         alpha = 0.2) +
     coord_cartesian(ylim = c(0, 10)) +
-    labs(x = "Year", y = "Inflation (%)") +
+    labs(x = "Year", y = "Log Inflation (%)") +
     ggtitle(" Variance in inflation rate across wealth classes (2000-2024)") +
     theme_minimal()
 
 ggplotly(plot)
+```
+
+```{r}
+join_labeled %>% 
+    select(year, country, wealth_class, inflation_pct) %>% 
+    drop_na() %>% 
+    ggplot(
+        data = .,
+        mapping = aes(x = year, y = log(inflation_pct))) +
+            geom_smooth(
+                mapping = aes(color = wealth_class),
+                alpha = 0.4) +
+                    labs(x = "Year", y = "Log Inflation (%)") +
+                    ggtitle(" Wealth class inflation rate (2000-2024)") +
+                    theme_minimal()
 ```
 
 ```{r}
@@ -765,7 +798,7 @@ The cleaning process mainly comprise of dealing with missing values. Before doin
 
 #### Exploration of correlations
 
-Correlation is an effective way to observe relationships between data, as well as understand the data we're working with. This assume linear relationships, which could be explored further using scatter plot. Panel data makes using correlation analysis as an inference trickier due to the assumption it involves. Fortunately, we'll only use it for exploration, and understanding. Statistical inference will be done using an appropriate model. The goal of this step is merely understanding relationships slightly to guide the missing value cleaning process.
+Correlation is an effective way to observe relationships between data, as well as understand the data we're working with. This assume linear relationships, which could be explored further using scatter plots. Panel data makes using correlation analysis as an inference trickier due to the assumption it involves. Fortunately, we'll only use it for exploration, and understanding. Statistical inference will be done using an appropriate model. The goal of this step is merely understanding relationships slightly to guide the missing value cleaning process.
 
 Find below a dataframe containing pearson correlation values between all predictors and inflation.
 
