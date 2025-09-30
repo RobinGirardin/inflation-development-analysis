@@ -93,6 +93,70 @@ Data overview
 
 For more insights into the joining process, refer to [data_joining](data_joining.qmd).
 
+
+## ==============================================
+#| label: tbl-19-indicators
+#| include: true
+#| echo: false
+
+library(dplyr)
+library(knitr)
+
+# 19 indicators (with fallbacks where we’ve seen typos/variants)
+indicator_candidates <- list(
+  inflation_pct          = c("inflation_pct"),
+  debt_gdp_pct           = c("debt_gdp_pct"),
+  gdp_growth_pct         = c("gdp_growth_pct"),
+  gdp_usd                = c("gdp_usd"),
+  unemployment_pct       = c("unemployment_pct"),
+  exports_gdp_pct        = c("exports_gdp_pct"),
+  imports_gdp_pct        = c("imports_gdp_pct"),
+  population_total       = c("population_total"),
+  broad_money_pct        = c("broad_money_pct"),
+  total_reserve_usd      = c("total_reserve_usd"),
+  gni_usd                = c("gni_usd"),
+  atlas_conversion_factor= c("atlas_conversion_factor","altas_conversation_factor","altas_conversion_factor"),
+  urban_pop_pct          = c("urban_pop_pct"),
+  life_expectancy        = c("life_expectancy"),
+  net_enrol_primary      = c("net_enrol_primary"),
+  net_enrol_secondary    = c("net_enrol_secondary"),
+  enrol_tertiary_gross   = c("enrol_tertiary_gross"),
+  fertility_rate         = c("fertility_rate"),
+  pop_growth_pct         = c("pop_growth_pct")
+)
+
+summarise_one <- function(df, col) {
+  x <- df[[col]]
+  tibble(
+    Variable = col,
+    Type     = class(x)[1],
+    NaN      = sum(is.na(x)),
+    Unique   = dplyr::n_distinct(x, na.rm = TRUE)
+  )
+}
+
+# Resolve which actual column exists for each indicator
+resolved <- lapply(names(indicator_candidates), function(name) {
+  cand <- indicator_candidates[[name]]
+  existing <- intersect(cand, names(join_labeled))
+  if (length(existing) == 0) return(NULL)
+  data.frame(canonical = name, column = existing[1], stringsAsFactors = FALSE)
+})
+resolved <- do.call(rbind, resolved)
+
+if (is.null(resolved) || nrow(resolved) == 0) {
+  cat("> No indicator columns found in `join_labeled`.\n")
+} else {
+  # Print a simple subheading + 1-row table for each indicator
+  for (i in seq_len(nrow(resolved))) {
+    canonical <- resolved$canonical[i]
+    colname   <- resolved$column[i]
+    cat("\n\n#### ", canonical, "\n\n", sep = "")
+    print(kable(summarise_one(join_labeled, colname), align = "lccc"))
+  }
+}
+
+
 ## Missing Values
 
 As @tbl-panel shows, some indicators contain a lot of missing values. Handling missing values should be done with care, as it influences the quality of the overall dataset and thus the prediction. Indeed, in our case removing rows containing missing values could bias the analysis, as the proportion of missing values in country with lower income is different than in country with higher income. Additionnaly, removing entire column could prove detrimental to the overall analysis as we could inadvertently remove important informations. Thus, the removal strategy will depend in the analysis performed.
