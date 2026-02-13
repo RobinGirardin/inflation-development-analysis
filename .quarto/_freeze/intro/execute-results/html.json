@@ -1,0 +1,15 @@
+{
+  "hash": "4455d8e4db0096045890988dd43586a1",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Introduction\"\nformat: html\nexecute: \n    echo: false\n    include: false\n    message: false\n    warning: false\n---\n\nInflation influences consumer purchasing power, economic growth, buisinesses developpement and competiteveness, central banks interests rates. As such, understand such an important factor of nowadays economy is crucial. Even more so considerinng the actual political and economical turbulence.\n\nWe were mandated by [World Bank Group](#https://www.worldbank.org/ext/en/home), Departement of Developement Economics, to explore data at their disposal and determine inflation developement patterns and predictors. More specifically, this report targets the following questions: \n\n- How is inflation distributed?\n- How does inflation develops from 2000 until todays?\n- How does crisis influence inflation markers?\n- Which indicators could be used to predict inflation rates?\n\n\n\n\n\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

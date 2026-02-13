@@ -1,0 +1,25 @@
+# Preface {.unnumbered}
+
+This quarto book illustrate our findings about the developement of inflation across countries.
+
+## Use of Generative AI
+
+Generative AI is a common and powerful tool. However, hallucination and illusion of competency prompt the user to use it with care.
+In this project, we used ChatGPT at the early stage of the project to brainstorm ideas. In the later stages, it was also used to check for the availability of particular R functions and help us in overcoming programming bottlenecks.
+
+Although a powerful tool, it shouldn't come at the cost of learning. Hence, a special emphasis was set in our group to avoid using it as much as possible. Whenever used, we tried to use in a way that it didn't digest and process the information in our place. Whether be it for declarative knowledge such as statistical models and their assumptions, economical theory or for procedural knowledge such as programming. Our goal was to left the thinking to us.
+
+## Chapter of Choice
+
+The **Chapter of Choice** is defined as the following: 
+
+> In this chapter we want you to use a package that was not mentioned in the main part of the course (data manipulation, visualisation using ggplot2, regular expressions and reporting using Rmarkdown does not count) and perform a task that was not directly discussed in the course. Be creative!
+
+Additionnaly,
+
+> It could even be a package that enables you to create prettier documents
+
+As such, our chapter of choice is the whole project, highlighting the presentation of the report in a quarto-book.
+More than a simple project notebook or Rmarkdown file, quarto books allow for a clear structure and logic throughout the report. It allows for better compartementalization across files, treating each of them as independant entities. This is especially usefull in our case, since we want part of the analytical pipleline (creation, joining, cleaning) and the report itself to have different presentation features and modalities.
+
+On top of that, it comes with a crisp and clean aesthetic out of the box.

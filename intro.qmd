@@ -1,0 +1,49 @@
+---
+title: "Introduction"
+format: html
+execute: 
+    echo: false
+    include: false
+    message: false
+    warning: false
+---
+
+Inflation influences consumer purchasing power, economic growth, buisinesses developpement and competiteveness, central banks interests rates. As such, understand such an important factor of nowadays economy is crucial. Even more so considerinng the actual political and economical turbulence.
+
+We were mandated by [World Bank Group](#https://www.worldbank.org/ext/en/home), Departement of Developement Economics, to explore data at their disposal and determine inflation developement patterns and predictors. More specifically, this report targets the following questions: 
+
+- How is inflation distributed?
+- How does inflation develops from 2000 until todays?
+- How does crisis influence inflation markers?
+- Which indicators could be used to predict inflation rates?
+
+```{r}
+library(DT)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(plotly)
+library(patchwork)
+library(rstatix)
+library(GGally)
+library(ggcorrplot)
+library(fixest)
+library(here)
+library(psych)
+```
+
+```{r}
+#| echo: true
+# Data used in most plots (has life_expectancy, fertility_rate, etc.)
+join_labeled <- readRDS(here("data", "processed", "join_labeled.rds"))
+
+# Data used later in the FE models
+join_clean   <- readRDS(here("data", "final", "join_clean.rds"))
+
+# Data used in the Appendix.
+# Has descriptive uses mostly in this notebook
+wealth <- read.csv(here("data", "raw", "country_wealth_labels_meta.csv"))
+# Rename columns for aethestics
+colnames(wealth) <- append(c("labels"), sapply(seq(1987, 2024), FUN = as.character))
+```
+

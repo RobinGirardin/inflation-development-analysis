@@ -1,0 +1,104 @@
+---
+title: "Appendix"
+format: html
+execute: 
+    echo: false
+    include: false
+    message: false
+    warning: false
+---
+
+```{r}
+library(DT)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(plotly)
+library(patchwork)
+library(rstatix)
+library(GGally)
+library(ggcorrplot)
+library(fixest)
+library(here)
+library(psych)
+```
+
+```{r}
+# Data used in the Appendix.
+# Has descriptive uses mostly in this notebook
+wealth <- read.csv(here("data", "raw", "country_wealth_labels_meta.csv"))
+# Rename columns for aethestics
+colnames(wealth) <- append(c("labels"), sapply(seq(1987, 2024), FUN = as.character))
+```
+
+# Appendix
+
+## A1. Indicators
+
+Find below a short description of each indicators composing the main dataset. The description has the following format
+
+* `WDI` indicator code (human readable label): description
+
+**Description:**
+
+* FP.CPI.TOTL.ZG (inflation_pct): Inflation, consumer prices (annual %) — measures the yearly percentage change in consumer prices as measured by the consumer price index. 
+
+* GC.DOD.TOTL.GD.ZS (debt_gdp_pct): Central government debt, total (% of GDP) — the stock of direct government debt liabilities as a share of gross domestic product.
+
+* NY.GDP.MKTP.KD.ZG (gdp_growth_pct): GDP growth (annual %) —  the total income earned through the production of goods and services in an economic territory during an accounting period. Measured in USD.  
+
+* NY.GDP.MKTP.CD (gdp_usd): GDP (current US$) — the total monetary value of all goods and services produced in an economy, measured at current U.S. dollar exchange rates. 
+
+* SL.UEM.TOTL.ZS (unemployment_pct): Unemployment, total (% of labor force) — the share of the labor force that is without work but available for and seeking employment.  
+
+* NE.EXP.GNFS.ZS (exports_gdp_pct): Exports of goods and services (% of GDP) — exports of goods and non-factor services as a percentage of GDP.
+
+* NE.IMP.GNFS.ZS (imports_gdp_pct): Imports of goods and services (% of GDP) — imports of goods and non-factor services as a percentage of GDP.
+
+* SP.POP.TOTL (population_total): Population, total — the total population of a country.
+
+* FM.LBL.BMNY.GD.ZS (broad_money_pct): Broad money (% of GDP) — the sum of all liquid financial instruments held by money-holding sectors that are widely accepted in an economy as a medium of exchange expressed as a share of GDP. 
+
+* FI.RES.TOTL.CD (total_reserve_usd): Reserves and related items (total reserves in current US$) — the stock of a country’s foreign exchange and gold reserves. 
+
+* NY.GNP.MKTP.PP.CD (gni_usd): GNI, PPP (current international $) — gross national income converted to international dollars using purchasing power parity (PPP) conversion factors. 
+
+* PA.NUS.PPP (altas_conversion_factor): Atlas conversion factor — World Bank’s Atlas method to convert national currencies into U.S. dollars to smooth exchange rate fluctuations. 
+
+* SP.URB.TOTL.IN.ZS (urban_pop_pct): Urban population (% of total) — the percentage of a country’s population living in urban areas.
+
+* SP.DYN.LE00.IN (life_expectancy): Life expectancy at birth, total (years) — the average number of years a newborn is expected to live if current mortality rates continue to apply.
+
+* SE.PRM.NENR (net_enrol_primary): School enrollment, primary (% net) — net enrollment rate in primary education: pupils of official primary school age enrolled as a proportion of the total population of that age.
+
+* SE.SEC.NENR (net_enrol_secondary): School enrollment, secondary (% net) — net enrollment rate in secondary education. 
+
+* SE.TER.ENRR (enrol_tertiary_gross): School enrollment, tertiary (% gross) — the gross enrollment ratio for tertiary education: total enrollment in tertiary education, regardless of age, expressed as a percentage of the official tertiary education age. 
+
+* SP.DYN.TFRT.IN (fertility_rate): Fertility rate, total (births per woman) — the average number of children that would be born to a woman over her lifetime if she were to experience the age-specific fertility rates of a given period.  
+
+* SP.POP.GROW (pop_growth_pct): Population growth (annual %) — the annual percentage growth rate of the total population, including the effects of natural increase and net migration.
+
+## A2. Wealth classes 2000-2024
+
+Find below the classification rule for the income level classes from 2000 until 2024.
+
+* L: low income class
+* LM: lower middle income class
+* UM: upper middle income class
+* H: High income class
+
+```{r}
+#| include: true
+# Remove the 'X' in the years column
+colnames(wealth) <- append(c("labels"), sapply(seq(1987, 2024), FUN = as.character))
+
+wealth %>% 
+    select("labels", "2000":"2024") %>% 
+    DT::datatable(
+        .,
+        options = list(
+            dom = 't'
+        ),
+        class = "compact")
+```

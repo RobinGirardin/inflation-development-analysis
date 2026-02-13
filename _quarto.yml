@@ -1,0 +1,37 @@
+project:
+  type: book
+
+
+book:
+  title: "Exploration of Inflation Developement"
+  author: "Girardin Robin & Georgantopoulos Nikolaos"
+  date: "9/29/2025"
+  chapters:
+
+    - part: "Report"
+    - index.qmd
+    - intro.qmd
+    - overview.qmd
+    - exploration.qmd
+    - pred.qmd
+    - conclusion.qmd
+    - references.qmd
+
+    - part: "Appendices"
+    - appendix.qmd
+
+    - part: "Code"
+    - data_creation.qmd
+    - data_joining.qmd
+    - data_cleaning.qmd
+
+bibliography: references.bib
+
+format:
+  html:
+    theme:
+      - cosmo
+      - brand
+
+
+
